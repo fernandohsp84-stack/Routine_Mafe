@@ -134,6 +134,35 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
   background:var(--night);font-size:12px;font-weight:800;cursor:pointer;color:var(--ink-2)}
 .dchip.on{background:var(--ember);border-color:var(--ember);color:#fff}
 
+/* LINHA DO TEMPO */
+.tl{position:relative;margin-top:4px}
+.tl-item{display:flex;gap:11px;align-items:stretch;position:relative}
+.tl-time{width:56px;flex:none;text-align:right;padding-top:12px}
+.tl-time b{display:block;font-size:14px;font-weight:800;line-height:1.05}
+.tl-time small{font-size:10.5px;color:var(--ink-3);font-weight:700}
+.tl-rail{width:22px;flex:none;position:relative;display:flex;justify-content:center}
+.tl-rail::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--line-strong)}
+.tl-item:first-child .tl-rail::before{top:16px}
+.tl-item:last-child .tl-rail::before{bottom:calc(100% - 20px)}
+.tl-dot{position:absolute;top:15px;width:14px;height:14px;border-radius:50%;background:var(--surface);
+  border:2.5px solid var(--ink-3);z-index:1}
+.tl-item.done .tl-dot{background:var(--leaf);border-color:var(--leaf)}
+.tl-item.now .tl-dot{border-color:var(--ember);box-shadow:0 0 0 4px rgba(242,116,60,.18)}
+.tl-card{flex:1;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;min-height:52px;position:relative;overflow:hidden}
+.tl-item.now .tl-card{border-color:var(--ember);background:linear-gradient(135deg,rgba(242,116,60,.08),transparent)}
+.tl-card .tci{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:16px;flex:none}
+.tl-card .tct{flex:1}
+.tl-card .tct .ti2{font-weight:700;font-size:14.5px}
+.tl-card .tct .sb{font-size:11px;color:var(--ink-3);font-weight:700}
+.tl-card .chk{width:25px;height:25px;border-radius:50%;border:2px solid var(--line-strong);flex:none;display:grid;place-items:center;transition:.18s}
+.tl-item.done .tl-card{opacity:.7}
+.tl-item.done .tl-card .ti2{text-decoration:line-through;color:var(--ink-3)}
+.tl-item.done .chk{background:var(--leaf);border-color:var(--leaf);color:#12240a}
+.tl-card .pts2{font-size:12px;font-weight:800;color:var(--thunder);white-space:nowrap}
+.now-badge{font-size:9.5px;font-weight:800;color:#fff;background:var(--ember);padding:2px 6px;border-radius:999px;position:absolute;top:8px;right:10px}
+.tl-free{margin-top:8px}
+
 /* TREINO */
 .week{padding:18px}
 .week-top{display:flex;align-items:center;gap:16px}
@@ -372,7 +401,11 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
       <div id="reminderSlot"></div>
     </div>
 
-    <div class="card hydro">
+    <div id="daySel"></div>
+    <div class="section-title" id="missTitle">Agenda de hoje</div>
+    <div id="todayMissions"></div>
+
+    <div class="card hydro" style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><strong style="font-size:15px">Trilha da Água</strong>
           <div class="bs muted" style="font-size:12px;font-weight:600">Beba água ao longo do dia</div></div>
@@ -382,10 +415,6 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
     </div>
 
     <div id="agendaSlot"></div>
-
-    <div id="daySel"></div>
-    <div class="section-title" id="missTitle">Missões de hoje</div>
-    <div id="todayMissions"></div>
   </section>
 
   <!-- TREINO -->
@@ -562,15 +591,15 @@ function seed(){
     profile:{nome:"Linn", xp:0, moedas:0},
     config:{pin:"1234", tema:"light", hidratacaoMeta:6, notif:false, voz:true, metaDia:100},
     rotina:[
-      {id:uid(),dom:"mochila",titulo:"Preparar a mochila da escola",xp:15},
-      {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",xp:25},
-      {id:uid(),dom:"estudos",titulo:"Ler 15 minutos",xp:15},
-      {id:uid(),dom:"esporte",titulo:"Atividade física (30 min)",xp:20},
-      {id:uid(),dom:"alimentacao",titulo:"Comer frutas e verduras",xp:15},
-      {id:uid(),dom:"remedios",titulo:"Remédio da manhã",xp:10,horario:"07:30"},
-      {id:uid(),dom:"terapias",titulo:"Ir à terapia",xp:20,horario:"14:00"},
-      {id:uid(),dom:"metas",titulo:"Arrumar o quarto",xp:10},
-      {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",xp:15},
+      {id:uid(),dom:"remedios",titulo:"Remédio da manhã",peso:10,inicio:"07:00",fim:"07:10",dias:[1,2,3,4,5]},
+      {id:uid(),dom:"mochila",titulo:"Preparar a mochila da escola",peso:15,inicio:"07:10",fim:"07:30",dias:[1,2,3,4,5]},
+      {id:uid(),dom:"alimentacao",titulo:"Lanche saudável depois da aula",peso:15,inicio:"16:30",fim:"17:00",dias:[1,2,3,4,5]},
+      {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:25,inicio:"17:30",fim:"18:30",dias:[1,2,3,4,5]},
+      {id:uid(),dom:"estudos",titulo:"Ler 15 minutos",peso:15,inicio:"18:30",fim:"18:45",dias:[1,2,3,4,5]},
+      {id:uid(),dom:"esporte",titulo:"Atividade física (30 min)",peso:20,inicio:"18:45",fim:"19:15"},
+      {id:uid(),dom:"metas",titulo:"Arrumar o quarto",peso:10,inicio:"19:15",fim:"19:30"},
+      {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",peso:15,inicio:"19:30",fim:"19:45"},
+      {id:uid(),dom:"terapias",titulo:"Ir à terapia",peso:20,inicio:"14:00",fim:"15:00",dias:[2,4]},
     ],
     completions:{},
     hidratacao:{},
@@ -633,6 +662,9 @@ function ptsMap(w){
   const m={};arr.forEach(o=>m[o.id]=o.p);return m;
 }
 function ptsFor(t,w){const m=ptsMap(w);return m[t.id]||0;}
+function tStart(t){return t.inicio||t.horario||"";}
+function tEnd(t){return t.fim||"";}
+function hm2min(s){if(!s)return null;const[h,m]=s.split(":").map(Number);return h*60+m;}
 
 /* ---------- Toast + confete ---------- */
 let toastT;
@@ -817,8 +849,8 @@ function renderReminder(){
   const comHora=[], semHora=[];
   S.rotina.forEach(t=>{
     if(!taskOnDay(t,wd)||isDoneOn(t.id,tk))return;
-    if(t.horario){const[h,m]=t.horario.split(":").map(Number);
-      comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:t.horario,min:h*60+m,tag:"Próxima tarefa"});}
+    const ini=tStart(t);
+    if(ini){comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:ini,min:hm2min(ini),tag:"Próxima tarefa"});}
     else semHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:"",tag:"Próxima tarefa"});
   });
   (S.agenda||[]).forEach(e=>{if(e.data===tk&&e.hora){const[h,m]=e.hora.split(":").map(Number);
@@ -912,37 +944,63 @@ function renderDaySel(){
 function renderToday(){
   const box=$("#todayMissions");box.innerHTML="";
   const dk=selKey(), wd=weekdayOf(dk), hoje=isToday(dk);
+  const d=new Date(dk+"T00:00:00");
   const tit=$("#missTitle");
-  if(tit)tit.textContent = hoje ? "Missões de hoje" : "Missões de "+DIAS_LONGO[wd]+" ("+pad2(new Date(dk+"T00:00:00").getDate())+"/"+pad2(new Date(dk+"T00:00:00").getMonth()+1)+")";
-  let any=false;
+  if(tit)tit.textContent = hoje ? "Agenda de hoje" : "Agenda de "+DIAS_LONGO[wd]+" ("+pad2(d.getDate())+"/"+pad2(d.getMonth()+1)+")";
   const mp=ptsMap(wd);
-  DOM_ORDER.forEach(dom=>{
-    const tasks=S.rotina.filter(t=>t.dom===dom && taskOnDay(t,wd));
-    if(!tasks.length)return;any=true;
-    const r=RESP[dom];
-    const g=document.createElement("div");g.className="group";
-    g.innerHTML=`<div class="group-head">
-      <div class="bicon" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
-      <div><div class="bt">Trilha ${r.nome}</div><div class="bs">${r.sub}</div></div></div>`;
-    tasks.forEach(t=>{
-      const done=isDoneOn(t.id,dk);
+  const tasks=S.rotina.filter(t=>taskOnDay(t,wd));
+  if(!tasks.length){
+    box.innerHTML=`<div class="card empty">Nenhuma missão ${hoje?"hoje":"neste dia"}. Monte a agenda no modo 🛡️ Guardião, definindo horário de início e fim de cada atividade.</div>`;
+    return;
+  }
+  // ordena por horário de início; sem horário vão para o fim
+  const comH=tasks.filter(t=>tStart(t)).sort((a,b)=>hm2min(tStart(a))-hm2min(tStart(b)));
+  const semH=tasks.filter(t=>!tStart(t));
+  const nowMin=(new Date()).getHours()*60+(new Date()).getMinutes();
+
+  const tl=document.createElement("div");tl.className="tl";
+  comH.forEach(t=>{
+    const done=isDoneOn(t.id,dk);const r=RESP[t.dom];
+    const ini=tStart(t), fim=tEnd(t);
+    const emAndamento = hoje && hm2min(ini)!=null && nowMin>=hm2min(ini) && (fim? nowMin<hm2min(fim): nowMin<hm2min(ini)+60) && !done;
+    const it=document.createElement("div");it.className="tl-item"+(done?" done":"")+(emAndamento?" now":"");
+    if(!hoje)it.style.opacity=".82";
+    it.innerHTML=`<div class="tl-time"><b>${ini}</b>${fim?`<small>${fim}</small>`:""}</div>
+      <div class="tl-rail"><span class="tl-dot"></span></div>
+      <div class="tl-card">
+        ${emAndamento?`<span class="now-badge">AGORA</span>`:""}
+        <div class="tci" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
+        <div class="tct"><div class="ti2">${escapeHtml(t.titulo)}</div><div class="sb">${r.sub}</div></div>
+        <span class="pts2">+${mp[t.id]||0}</span>
+        <div class="chk">${done?"✓":""}</div>
+      </div>`;
+    it.querySelector(".tl-card").onclick=()=> hoje ? toggleTask(t,it)
+      : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia.");
+    tl.appendChild(it);
+  });
+  box.appendChild(tl);
+
+  if(semH.length){
+    const sub=document.createElement("div");sub.className="section-title tl-free";sub.style.marginTop="18px";
+    sub.textContent="Sem horário definido";box.appendChild(sub);
+    const grp=document.createElement("div");grp.className="group";
+    semH.forEach(t=>{
+      const done=isDoneOn(t.id,dk);const r=RESP[t.dom];
       const row=document.createElement("div");row.className="row"+(done?" done":"");
-      if(!hoje)row.style.opacity=".72";
+      if(!hoje)row.style.opacity=".82";
       row.innerHTML=`<div class="check">${done?"✓":""}</div>
+        <div style="width:26px;text-align:center">${r.icon}</div>
         <div class="txt">${escapeHtml(t.titulo)}</div>
-        ${t.horario?`<span class="meta">${t.horario}</span>`:""}
         <span class="xpwin">+${mp[t.id]||0}</span>`;
       row.onclick=()=> hoje ? toggleTask(t,row)
         : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia.");
-      g.appendChild(row);
+      grp.appendChild(row);
     });
-    box.appendChild(g);
-  });
-  if(any){
-    const note=document.createElement("div");note.className="plan-note";
-    note.textContent="Meta do dia: "+metaDia()+" XP (os pontos se redistribuem entre as missões do dia).";
-    box.appendChild(note);
-  }else box.innerHTML=`<div class="card empty">Nenhuma missão ${hoje?"hoje":"neste dia"}. Monte a rotina no modo 🛡️ Guardião e escolha os dias de cada missão.</div>`;
+    box.appendChild(grp);
+  }
+  const note=document.createElement("div");note.className="plan-note";note.style.marginTop="12px";
+  note.textContent="Meta do dia: "+metaDia()+" XP · os pontos se redistribuem entre as atividades.";
+  box.appendChild(note);
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
@@ -1193,7 +1251,7 @@ function renderPais(){
       const row=document.createElement("div");row.className="row";
       row.innerHTML=`<div style="flex:1">
           <div class="txt">${escapeHtml(t.titulo)}</div>
-          <div class="bs muted" style="font-size:11.5px;font-weight:700">${diasResumo(t)}${t.horario?" · "+t.horario:""} · peso ${taskWeight(t)}</div>
+          <div class="bs muted" style="font-size:11.5px;font-weight:700">${diasResumo(t)}${horaLabel(t)?" · "+horaLabel(t):""} · peso ${taskWeight(t)}</div>
         </div>
         <button class="del" aria-label="Editar">✎</button>`;
       row.querySelector(".txt").parentElement.onclick=()=>sheetTask(t);
@@ -1302,7 +1360,10 @@ function sheetTask(edit,preDay){
     <div style="margin-bottom:6px"><button class="chip" id="diasAll" type="button">Todos os dias</button>
       <button class="chip" id="diasUteis" type="button">Seg a sex</button></div>
     <div class="daychips" id="diaChips"></div>
-    <label class="fld">Horário (opcional)</label><input id="tTime" type="time" value="${edit&&edit.horario?edit.horario:""}">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label class="fld">Início (horário)</label><input id="tIni" type="time" value="${edit?tStart(edit):""}"></div>
+      <div style="flex:1"><label class="fld">Fim (opcional)</label><input id="tFim" type="time" value="${edit?tEnd(edit):""}"></div>
+    </div>
     <label class="fld">Peso / importância</label><input id="tXp" type="number" value="${edit?taskWeight(edit):15}">
     <div class="muted" style="font-size:11.5px;font-weight:600;margin:5px 2px 0">Os pontos de cada dia são divididos entre as missões conforme o peso, somando sempre a meta do dia (${metaDia()} XP). Peso maior = mais pontos naquela missão.</div>
     <button class="btn primary" id="tSave" style="margin-top:16px">${novo?"Adicionar missão":"Salvar alterações"}</button>
@@ -1322,11 +1383,13 @@ function sheetTask(edit,preDay){
   $("#tSave").onclick=()=>{
     const titulo=$("#tTitle").value.trim();if(!titulo){toast("Escreva a missão");return;}
     if(!dias.length){toast("Escolha ao menos um dia");return;}
-    const hor=$("#tTime").value;
+    const ini=$("#tIni").value, fim=$("#tFim").value;
+    if(ini&&fim&&hm2min(fim)<=hm2min(ini)){toast("O fim deve ser depois do início");return;}
     const peso=Math.max(1,parseInt($("#tXp").value)||15);
     const ds=[0,1,2,3,4,5,6].filter(w=>dias.includes(w)); // ordena
-    if(edit){edit.dom=dom;edit.titulo=titulo;edit.peso=peso;delete edit.xp;edit.dias=ds; if(hor)edit.horario=hor; else delete edit.horario;}
-    else{const t={id:Math.random().toString(36).slice(2,9),dom,titulo,peso,dias:ds}; if(hor)t.horario=hor; S.rotina.push(t);}
+    if(edit){edit.dom=dom;edit.titulo=titulo;edit.peso=peso;delete edit.xp;edit.dias=ds;
+      if(ini)edit.inicio=ini; else delete edit.inicio; if(fim)edit.fim=fim; else delete edit.fim; delete edit.horario;}
+    else{const t={id:Math.random().toString(36).slice(2,9),dom,titulo,peso,dias:ds}; if(ini)t.inicio=ini; if(fim)t.fim=fim; S.rotina.push(t);}
     save();closeSheet();renderPais();renderToday();renderReminder();toast(novo?"Missão adicionada — pontos redistribuídos":"Missão atualizada — pontos redistribuídos");
   };
   if(edit)$("#tDel").onclick=()=>{S.rotina=S.rotina.filter(x=>x.id!==edit.id);save();closeSheet();renderPais();renderToday();renderReminder();toast("Missão removida");};
@@ -1337,6 +1400,7 @@ function diasResumo(t){
   if(ds.length===5&&[1,2,3,4,5].every(w=>ds.includes(w)))return "Seg a sex";
   return [1,2,3,4,5,6,0].filter(w=>ds.includes(w)).map(w=>DIAS_CURTO[w]).join(", ");
 }
+function horaLabel(t){const i=tStart(t),f=tEnd(t);return i?(f?i+"–"+f:i):"";}
 /* Gerenciador de missões por dia (Guardião) */
 function renderPaisDia(){
   const chips=$("#pdiaChips");if(!chips)return;chips.innerHTML="";
@@ -1345,16 +1409,18 @@ function renderPaisDia(){
     el.onclick=()=>{PDIA=w;renderPaisDia();};chips.appendChild(el);});
   const list=$("#pdiaList");list.innerHTML="";
   const mp=ptsMap(PDIA);
-  const tasks=S.rotina.filter(t=>taskOnDay(t,PDIA));
+  const tasks=S.rotina.filter(t=>taskOnDay(t,PDIA))
+    .sort((a,b)=>{const A=tStart(a),B=tStart(b);if(A&&B)return hm2min(A)-hm2min(B);if(A)return -1;if(B)return 1;return 0;});
   const soma=tasks.reduce((a,t)=>a+(mp[t.id]||0),0);
   const head=document.createElement("div");head.className="plan-note";head.style.margin="8px 2px 2px";
-  head.textContent=tasks.length?`${tasks.length} missõe${tasks.length>1?"s":""} · soma ${soma}/${metaDia()} XP`:"Nenhuma missão neste dia ainda.";
+  head.textContent=tasks.length?`${tasks.length} atividade${tasks.length>1?"s":""} · soma ${soma}/${metaDia()} XP`:"Nenhuma atividade neste dia ainda.";
   list.appendChild(head);
   tasks.forEach(t=>{
+    const hl=horaLabel(t);
     const row=document.createElement("div");row.className="rowedit";
     row.innerHTML=`<div style="font-size:16px">${RESP[t.dom].icon}</div>
-      <div style="flex:1"><div style="font-weight:700;font-size:14px">${escapeHtml(t.titulo)}</div>
-        <div class="muted" style="font-size:11px;font-weight:600">${RESP[t.dom].sub}${t.horario?" · "+t.horario:""} · peso ${taskWeight(t)}</div></div>
+      <div style="flex:1"><div style="font-weight:700;font-size:14px">${hl?`<span style="color:var(--ink-2)">${hl}</span> · `:""}${escapeHtml(t.titulo)}</div>
+        <div class="muted" style="font-size:11px;font-weight:600">${RESP[t.dom].sub} · peso ${taskWeight(t)}</div></div>
       <span class="xpwin">+${mp[t.id]||0}</span>
       <button class="del" title="Editar">✎</button>
       <button class="del" title="Excluir" style="color:var(--ember)">🗑</button>`;
@@ -1545,8 +1611,9 @@ function migrate(){
   if(typeof S.config.voz==="undefined")S.config.voz=true;
   if(typeof S.config.notif==="undefined")S.config.notif=false;
   if(typeof S.config.metaDia!=="number")S.config.metaDia=100;
-  // peso por missão (converte xp antigo em peso; default 15)
-  (S.rotina||[]).forEach(t=>{ if(typeof t.peso!=="number"){t.peso=(typeof t.xp==="number"&&t.xp>0)?t.xp:15;} });
+  // peso por missão (converte xp antigo em peso; default 15) e horario -> inicio
+  (S.rotina||[]).forEach(t=>{ if(typeof t.peso!=="number"){t.peso=(typeof t.xp==="number"&&t.xp>0)?t.xp:15;}
+    if(!t.inicio&&t.horario){t.inicio=t.horario;delete t.horario;} });
   if(!S.memoria)S.memoria={recordes:{sequencia:0,pares:0,lista:0}};
   if(!S.fisico){const uid=()=>Math.random().toString(36).slice(2,9);
     S.fisico={metaSemanal:100,mesada:20,catalogo:[
@@ -1660,7 +1727,7 @@ function agTarefa(c){
   const titulo=cleanTitle(c.raw)||"Nova missão";
   const peso=c.xp?Math.max(1,+c.xp):15;
   const t={id:Math.random().toString(36).slice(2,9),dom:c.dom,titulo,peso,dias:[0,1,2,3,4,5,6]};
-  if(c.hora)t.horario=c.hora;
+  if(c.hora)t.inicio=c.hora;
   S.rotina.push(t);save();refreshAll();
   const r=RESP[c.dom];
   return {reply:`Feito ✓ Criei a missão “${titulo}” na Trilha ${r.nome} (${r.sub})${c.hora?" às "+c.hora:""}. Pontos do dia redistribuídos (meta: ${metaDia()} XP).`,
