@@ -110,6 +110,30 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .reminder .rt{font-weight:800}
 .reminder .who{font-size:12px;color:var(--ink-2)}
 
+/* SELETOR DE DIAS */
+.weekbar{display:flex;align-items:center;gap:6px;margin:18px 2px 2px}
+.weekbar .nav{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);font-size:14px;display:grid;place-items:center;cursor:pointer;flex:none}
+.weekbar .lbl{flex:1;text-align:center;font-size:12px;font-weight:800;color:var(--ink-3)}
+.weekstrip{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 2px;scrollbar-width:none}
+.weekstrip::-webkit-scrollbar{display:none}
+.wd{flex:1;min-width:42px;border:1px solid var(--line);background:var(--surface);border-radius:14px;
+  padding:9px 4px;text-align:center;cursor:pointer;transition:transform .1s}
+.wd:active{transform:scale(.95)}
+.wd .wn{font-size:10.5px;font-weight:800;color:var(--ink-3);letter-spacing:.02em}
+.wd .wnum{font-size:16px;font-weight:800;margin-top:2px}
+.wd.sel{background:linear-gradient(135deg,var(--ember),#ff8a5c);border-color:transparent;color:#fff}
+.wd.sel .wn{color:rgba(255,255,255,.85)}
+.wd.today{border-color:var(--ember)}
+.wd .dot{width:5px;height:5px;border-radius:50%;background:var(--leaf);margin:3px auto 0;opacity:0}
+.wd.has .dot{opacity:1}
+.wd.sel .dot{background:#fff}
+.plan-note{font-size:12px;font-weight:700;color:var(--ink-3);margin:4px 6px 0}
+.daychips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.dchip{width:40px;text-align:center;padding:8px 0;border-radius:10px;border:1px solid var(--line-strong);
+  background:var(--night);font-size:12px;font-weight:800;cursor:pointer;color:var(--ink-2)}
+.dchip.on{background:var(--ember);border-color:var(--ember);color:#fff}
+
 /* TREINO */
 .week{padding:18px}
 .week-top{display:flex;align-items:center;gap:16px}
@@ -359,7 +383,8 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
 
     <div id="agendaSlot"></div>
 
-    <div class="section-title">Missões de hoje</div>
+    <div id="daySel"></div>
+    <div class="section-title" id="missTitle">Missões de hoje</div>
     <div id="todayMissions"></div>
   </section>
 
@@ -514,6 +539,19 @@ const MEDALHAS = [
   {id:"hashira",  icon:"🏯", nome:"Pilar (Hashira)",check:s=>rankIndex(s.profile.xp)>=10},
 ];
 
+/* ---------- Dias da semana ---------- */
+const DIAS_CURTO=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const DIAS_LONGO=["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+let SEL=null;      // data selecionada (chave YYYY-MM-DD); null = hoje
+let WK=0;          // deslocamento de semanas em relação à atual
+function selKey(){return SEL||todayKey();}
+function isToday(dk){return dk===todayKey();}
+function weekdayOf(dk){return new Date(dk+"T00:00:00").getDay();}
+function taskOnDay(t,w){return !t.dias||!t.dias.length||t.dias.includes(w);}
+function isDoneOn(id,dk){const d=S.completions[dk];return !!(d&&d[id]);}
+function mondayOf(off){const d=new Date();d.setHours(0,0,0,0);
+  const diff=(d.getDay()+6)%7; d.setDate(d.getDate()-diff+off*7); return d;}
+
 /* ---------- Estado ---------- */
 const KEY="kizuna_state_v1";
 function seed(){
@@ -646,8 +684,8 @@ function toggleTask(t,rowEl){
 
 /* ---------- Linn: companheiro reativo ---------- */
 function linnMood(){
-  const tk=todayKey();
-  const total=S.rotina.length||1;
+  const tk=todayKey();const wd=weekdayOf(tk);
+  const total=Math.max(1,S.rotina.filter(t=>taskOnDay(t,wd)).length);
   const feitas=Object.values(S.completions[tk]||{}).filter(Boolean).length;
   const r=feitas/total;
   if(feitas===0)return "sono";
@@ -730,7 +768,7 @@ function drawLinn(mood){
     </g></svg>`;
 }
 /* Lê uma imagem, recorta/reduz para 256px e guarda como data URI no aparelho */
-function loadLinnFile(mood,file){
+function processLinnImage(file,cb){
   const rd=new FileReader();
   rd.onload=()=>{const img=new Image();
     img.onload=()=>{
@@ -739,7 +777,7 @@ function loadLinnFile(mood,file){
       ctx.drawImage(img,(N-w)/2,(N-h)/2,w,h);
       let url;try{url=c.toDataURL("image/webp",0.85);}catch(e){url="";}
       if(!url||url.length<50)url=c.toDataURL("image/png");
-      S.linn=S.linn||{};S.linn[mood]=url;save();renderHero();renderPais();toast("Imagem do Linn atualizada ✓");
+      cb(url);
     };
     img.onerror=()=>toast("Não consegui ler essa imagem");
     img.src=rd.result;
@@ -747,20 +785,39 @@ function loadLinnFile(mood,file){
   rd.onerror=()=>toast("Falha ao abrir o arquivo");
   rd.readAsDataURL(file);
 }
+function loadLinnFile(mood,file){
+  processLinnImage(file,url=>{S.linn=S.linn||{};S.linn[mood]=url;save();renderHero();renderPais();toast("Imagem do Linn atualizada ✓");});
+}
+function loadLinnAll(file){
+  processLinnImage(file,url=>{S.linn={sono:url,animado:url,feliz:url,euforia:url,campeao:url};
+    save();renderHero();renderPais();toast("Avatar definido para todos os humores ✓");});
+}
 function renderReminder(){
+  // Mostra a PRÓXIMA TAREFA de hoje (por horário quando houver; senão a próxima missão pendente)
   const slot=$("#reminderSlot");slot.innerHTML="";
-  const now=new Date();const cur=now.getHours()*60+now.getMinutes();const tk=todayKey();
-  const items=[];
-  S.rotina.forEach(t=>{if(t.horario&&!isDone(t.id)){const[h,m]=t.horario.split(":").map(Number);
-    items.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:t.horario,min:h*60+m,tag:"Lembrete"});}});
+  const now=new Date();const cur=now.getHours()*60+now.getMinutes();
+  const tk=todayKey();const wd=weekdayOf(tk);
+  const comHora=[], semHora=[];
+  S.rotina.forEach(t=>{
+    if(!taskOnDay(t,wd)||isDoneOn(t.id,tk))return;
+    if(t.horario){const[h,m]=t.horario.split(":").map(Number);
+      comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:t.horario,min:h*60+m,tag:"Próxima tarefa"});}
+    else semHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:"",tag:"Próxima tarefa"});
+  });
   (S.agenda||[]).forEach(e=>{if(e.data===tk&&e.hora){const[h,m]=e.hora.split(":").map(Number);
-    items.push({icon:(RESP[e.dom]||RESP.terapias).icon,titulo:e.titulo,hora:e.hora,min:h*60+m,tag:"Compromisso"});}});
-  if(!items.length)return;
-  items.sort((a,b)=>Math.abs(a.min-cur)-Math.abs(b.min-cur));
-  const nx=items.find(x=>x.min>=cur)||items[0];
+    comHora.push({icon:(RESP[e.dom]||RESP.terapias).icon,titulo:e.titulo,hora:e.hora,min:h*60+m,tag:"Compromisso"});}});
+  let nx=null;
+  if(comHora.length){comHora.sort((a,b)=>a.min-b.min); nx=comHora.find(x=>x.min>=cur)||comHora[0];}
+  else if(semHora.length){nx=semHora[0];}
+  if(!nx){ // tudo concluído hoje
+    slot.innerHTML=`<div class="reminder"><span style="font-size:20px">🍋</span>
+      <div style="flex:1"><div class="rt">Tudo em dia!</div><div class="who">Nenhuma tarefa pendente hoje</div></div></div>`;
+    return;
+  }
   slot.innerHTML=`<div class="reminder"><span style="font-size:20px">${nx.icon}</span>
-    <div style="flex:1"><div class="rt">${escapeHtml(nx.titulo)}</div><div class="who">${nx.tag} às ${nx.hora}</div></div>
-    <span class="pill">${nx.hora}</span></div>`;
+    <div style="flex:1"><div class="rt">${escapeHtml(nx.titulo)}</div>
+      <div class="who">${nx.tag}${nx.hora?" · "+nx.hora:""}</div></div>
+    ${nx.hora?`<span class="pill">${nx.hora}</span>`:`<span class="pill">a fazer</span>`}</div>`;
 }
 
 /* ---------- Render: AGENDA ---------- */
@@ -808,12 +865,41 @@ function renderHydro(){
   }
 }
 
-/* ---------- Render: MISSÕES DE HOJE ---------- */
+/* ---------- Seletor de dias (semana) ---------- */
+function renderDaySel(){
+  const host=$("#daySel");if(!host)return;host.innerHTML="";
+  const seg=mondayOf(WK);
+  const semanaLbl="Semana de "+pad2(seg.getDate())+"/"+pad2(seg.getMonth()+1);
+  const bar=document.createElement("div");bar.className="weekbar";
+  bar.innerHTML=`<button class="nav" id="wkPrev" aria-label="Semana anterior">‹</button>
+    <div class="lbl">${WK===0?"Esta semana":semanaLbl}</div>
+    <button class="nav" id="wkNext" aria-label="Próxima semana">›</button>`;
+  host.appendChild(bar);
+  const strip=document.createElement("div");strip.className="weekstrip";
+  for(let i=0;i<7;i++){
+    const d=new Date(seg);d.setDate(seg.getDate()+i);
+    const dk=todayKey(d);const wd=d.getDay();
+    const aplic=S.rotina.filter(t=>taskOnDay(t,wd)).length;
+    const el=document.createElement("div");
+    el.className="wd"+(dk===selKey()?" sel":"")+(isToday(dk)?" today":"")+(aplic?" has":"");
+    el.innerHTML=`<div class="wn">${DIAS_CURTO[wd]}</div><div class="wnum">${d.getDate()}</div><div class="dot"></div>`;
+    el.onclick=()=>{SEL=dk;renderDaySel();renderToday();};
+    strip.appendChild(el);
+  }
+  host.appendChild(strip);
+  $("#wkPrev").onclick=()=>{WK--;renderDaySel();};
+  $("#wkNext").onclick=()=>{WK++;renderDaySel();};
+}
+
+/* ---------- Render: MISSÕES DO DIA ---------- */
 function renderToday(){
   const box=$("#todayMissions");box.innerHTML="";
+  const dk=selKey(), wd=weekdayOf(dk), hoje=isToday(dk);
+  const tit=$("#missTitle");
+  if(tit)tit.textContent = hoje ? "Missões de hoje" : "Missões de "+DIAS_LONGO[wd]+" ("+pad2(new Date(dk+"T00:00:00").getDate())+"/"+pad2(new Date(dk+"T00:00:00").getMonth()+1)+")";
   let any=false;
   DOM_ORDER.forEach(dom=>{
-    const tasks=S.rotina.filter(t=>t.dom===dom);
+    const tasks=S.rotina.filter(t=>t.dom===dom && taskOnDay(t,wd));
     if(!tasks.length)return;any=true;
     const r=RESP[dom];
     const g=document.createElement("div");g.className="group";
@@ -821,18 +907,20 @@ function renderToday(){
       <div class="bicon" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
       <div><div class="bt">Trilha ${r.nome}</div><div class="bs">${r.sub}</div></div></div>`;
     tasks.forEach(t=>{
-      const done=isDone(t.id);
+      const done=isDoneOn(t.id,dk);
       const row=document.createElement("div");row.className="row"+(done?" done":"");
+      if(!hoje)row.style.opacity=".72";
       row.innerHTML=`<div class="check">${done?"✓":""}</div>
         <div class="txt">${escapeHtml(t.titulo)}</div>
         ${t.horario?`<span class="meta">${t.horario}</span>`:""}
         <span class="xpwin">+${t.xp}</span>`;
-      row.onclick=()=>toggleTask(t,row);
+      row.onclick=()=> hoje ? toggleTask(t,row)
+        : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia.");
       g.appendChild(row);
     });
     box.appendChild(g);
   });
-  if(!any)box.innerHTML=`<div class="card empty">Nenhuma missão ainda. Peça a um guardião para montar a rotina no modo 🛡️ Guardião.</div>`;
+  if(!any)box.innerHTML=`<div class="card empty">Nenhuma missão ${hoje?"hoje":"neste dia"}. Monte a rotina no modo 🛡️ Guardião e escolha os dias de cada missão.</div>`;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
@@ -1069,11 +1157,15 @@ function renderPais(){
     g.innerHTML=`<div class="group-head"><div class="bicon" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
       <div><div class="bt">Trilha ${r.nome}</div><div class="bs">${r.sub}</div></div></div>`;
     tasks.forEach(t=>{
-      const row=document.createElement("div");row.className="row";row.style.cursor="default";
-      row.innerHTML=`<div class="txt">${escapeHtml(t.titulo)}</div>
-        ${t.horario?`<span class="meta">${t.horario}</span>`:""}<span class="xpwin">+${t.xp}</span>
-        <button class="del" aria-label="Remover">🗑</button>`;
-      row.querySelector(".del").onclick=()=>{S.rotina=S.rotina.filter(x=>x.id!==t.id);save();renderPais();renderToday();};
+      const row=document.createElement("div");row.className="row";
+      row.innerHTML=`<div style="flex:1">
+          <div class="txt">${escapeHtml(t.titulo)}</div>
+          <div class="bs muted" style="font-size:11.5px;font-weight:700">${diasResumo(t)}${t.horario?" · "+t.horario:""}</div>
+        </div>
+        <span class="xpwin">+${t.xp}</span>
+        <button class="del" aria-label="Editar">✎</button>`;
+      row.querySelector(".txt").parentElement.onclick=()=>sheetTask(t);
+      row.querySelector(".del").onclick=e=>{e.stopPropagation();sheetTask(t);};
       g.appendChild(row);
     });
     rot.appendChild(g);
@@ -1097,6 +1189,21 @@ function renderPais(){
 
   // aparência do Linn
   const lc=$("#linnCfg");lc.innerHTML="";
+  // opção: uma única foto para todos os humores
+  const allRow=document.createElement("div");allRow.className="linn-row";
+  const temFoto=["sono","animado","feliz","euforia","campeao"].some(m=>linnSrc(m));
+  allRow.innerHTML=`<div class="linn-prev" style="display:grid;place-items:center;font-size:16px">📷</div>
+    <div class="nm">Usar uma única foto<br><span class="muted" style="font-size:11px;font-weight:600">mesma imagem em todos os humores</span></div>
+    ${temFoto?`<button class="clr" title="Voltar ao desenho">✕</button>`:""}
+    <button class="pick">Escolher…</button>
+    <input type="file" accept="image/*" style="display:none">`;
+  const allFile=allRow.querySelector("input");
+  allRow.querySelector(".pick").onclick=()=>allFile.click();
+  allFile.onchange=e=>{if(e.target.files[0])loadLinnAll(e.target.files[0]);};
+  const allClr=allRow.querySelector(".clr");if(allClr)allClr.onclick=()=>{S.linn={};save();renderHero();renderPais();toast("Avatar voltou ao desenho padrão");};
+  lc.appendChild(allRow);
+  const sep=document.createElement("div");sep.className="plan-note";sep.style.margin="8px 0 2px";
+  sep.textContent="Ou uma imagem diferente por humor:";lc.appendChild(sep);
   const LINN_ESTADOS=[["sono","Cansado / início do dia"],["animado","Animado"],["feliz","Feliz"],["euforia","Eufórico"],["campeao","Campeão (dia 100%)"]];
   LINN_ESTADOS.forEach(([mood,label])=>{
     const src=linnSrc(mood);
@@ -1146,23 +1253,51 @@ function openSheet(html){$("#sheetPanel").innerHTML=`<div class="grab"></div>`+h
 function closeSheet(){$("#sheet").classList.remove("open");}
 $("#sheet").onclick=e=>{if(e.target.id==="sheet")closeSheet();};
 
-function sheetTask(){
-  let dom="estudos";
-  openSheet(`<h3>Nova missão</h3>
+function sheetTask(edit){
+  const novo=!edit;
+  let dom = edit? edit.dom : "estudos";
+  // dias selecionados: [1..6,0]; default todos para nova missão
+  let dias = edit && edit.dias && edit.dias.length ? edit.dias.slice() : [0,1,2,3,4,5,6];
+  openSheet(`<h3>${novo?"Nova missão":"Editar missão"}</h3>
     <label class="fld">Trilha (área)</label><div class="chips" id="domChips"></div>
-    <label class="fld">O que fazer</label><input id="tTitle" placeholder="Ex.: Escovar os dentes">
-    <label class="fld">Horário do lembrete (opcional)</label><input id="tTime" type="time">
-    <label class="fld">XP ao concluir</label><input id="tXp" type="number" value="15">
-    <button class="btn primary" id="tSave" style="margin-top:16px">Adicionar missão</button>`);
+    <label class="fld">O que fazer</label><input id="tTitle" value="${edit?escapeHtml(edit.titulo):""}" placeholder="Ex.: Escovar os dentes">
+    <label class="fld">Dias da semana</label>
+    <div style="margin-bottom:6px"><button class="chip" id="diasAll" type="button">Todos os dias</button>
+      <button class="chip" id="diasUteis" type="button">Seg a sex</button></div>
+    <div class="daychips" id="diaChips"></div>
+    <label class="fld">Horário (opcional)</label><input id="tTime" type="time" value="${edit&&edit.horario?edit.horario:""}">
+    <label class="fld">XP ao concluir</label><input id="tXp" type="number" value="${edit?edit.xp:15}">
+    <button class="btn primary" id="tSave" style="margin-top:16px">${novo?"Adicionar missão":"Salvar alterações"}</button>
+    ${edit?`<button class="btn ghost" id="tDel" style="margin-top:9px;color:var(--ember)">Excluir missão</button>`:""}`);
   const chips=$("#domChips");
   DOM_ORDER.forEach(d=>{const el=document.createElement("div");el.className="chip"+(d===dom?" on":"");
     el.textContent=RESP[d].icon+" "+RESP[d].sub;el.onclick=()=>{dom=d;$$(".chip",chips).forEach(c=>c.classList.remove("on"));el.classList.add("on");};
     chips.appendChild(el);});
+  const dbox=$("#diaChips");
+  function drawDias(){dbox.innerHTML="";[1,2,3,4,5,6,0].forEach(w=>{
+    const el=document.createElement("div");el.className="dchip"+(dias.includes(w)?" on":"");el.textContent=DIAS_CURTO[w];
+    el.onclick=()=>{ if(dias.includes(w))dias=dias.filter(x=>x!==w); else dias.push(w); drawDias();};
+    dbox.appendChild(el);});}
+  drawDias();
+  $("#diasAll").onclick=()=>{dias=[0,1,2,3,4,5,6];drawDias();};
+  $("#diasUteis").onclick=()=>{dias=[1,2,3,4,5];drawDias();};
   $("#tSave").onclick=()=>{
     const titulo=$("#tTitle").value.trim();if(!titulo){toast("Escreva a missão");return;}
-    const t={id:Math.random().toString(36).slice(2,9),dom,titulo,xp:Math.max(1,parseInt($("#tXp").value)||15)};
-    const hor=$("#tTime").value;if(hor)t.horario=hor;
-    S.rotina.push(t);save();closeSheet();renderPais();renderToday();toast("Missão adicionada");};
+    if(!dias.length){toast("Escolha ao menos um dia");return;}
+    const hor=$("#tTime").value;
+    const xp=Math.max(1,parseInt($("#tXp").value)||15);
+    const ds=[0,1,2,3,4,5,6].filter(w=>dias.includes(w)); // ordena
+    if(edit){edit.dom=dom;edit.titulo=titulo;edit.xp=xp;edit.dias=ds; if(hor)edit.horario=hor; else delete edit.horario;}
+    else{const t={id:Math.random().toString(36).slice(2,9),dom,titulo,xp,dias:ds}; if(hor)t.horario=hor; S.rotina.push(t);}
+    save();closeSheet();renderPais();renderToday();renderReminder();toast(novo?"Missão adicionada":"Missão atualizada");
+  };
+  if(edit)$("#tDel").onclick=()=>{S.rotina=S.rotina.filter(x=>x.id!==edit.id);save();closeSheet();renderPais();renderToday();renderReminder();toast("Missão removida");};
+}
+function diasResumo(t){
+  const ds=t.dias&&t.dias.length?t.dias:[0,1,2,3,4,5,6];
+  if(ds.length===7)return "Todos os dias";
+  if(ds.length===5&&[1,2,3,4,5].every(w=>ds.includes(w)))return "Seg a sex";
+  return [1,2,3,4,5,6,0].filter(w=>ds.includes(w)).map(w=>DIAS_CURTO[w]).join(", ");
 }
 function sheetReward(){
   openSheet(`<h3>Nova recompensa</h3>
@@ -1313,7 +1448,7 @@ function go(scr){
   $$(".screen").forEach(s=>s.classList.remove("active"));
   $("#scr-"+scr).classList.add("active");
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.scr===scr));
-  if(scr==="hoje"){renderHero();renderHydro();renderToday();renderReminder();renderAgenda();}
+  if(scr==="hoje"){SEL=null;WK=0;renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();}
   if(scr==="treino")renderTreino();
   if(scr==="dojo")renderDojo();
   if(scr==="tesouro")renderTesouro();
@@ -1449,7 +1584,7 @@ function classify(raw){
   }
   return {intent:"fallback", raw};
 }
-function refreshAll(){renderHero();renderHydro();renderToday();renderReminder();renderAgenda();renderTesouro();renderDojo();renderTreino();}
+function refreshAll(){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();renderTesouro();renderDojo();renderTreino();}
 function agTreino(c){return logTreinoByText(norm(c.raw));}
 /* --- agentes especializados --- */
 function agTarefa(c){
@@ -1590,10 +1725,10 @@ function initAssistant(){
 /* ---------- Init ---------- */
 load();migrate();
 if(!S.config.tema)S.config.tema=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
-applyTheme();drawMon();renderHero();renderHydro();renderToday();renderReminder();renderAgenda();
+applyTheme();drawMon();renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();
 initAssistant();
 setInterval(checkReminders,30000);
-window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderToday();renderAgenda();} });
+window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();} });
 try{ if(!sessionStorage.getItem("kiz_greeted")){ sessionStorage.setItem("kiz_greeted","1"); setTimeout(()=>openAssist(true),650); } }catch(e){}
 </script>
 </body>
