@@ -544,6 +544,7 @@ const DIAS_CURTO=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 const DIAS_LONGO=["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
 let SEL=null;      // data selecionada (chave YYYY-MM-DD); null = hoje
 let WK=0;          // deslocamento de semanas em relação à atual
+let PDIA=new Date().getDay();  // dia selecionado no gerenciador do Guardião
 function selKey(){return SEL||todayKey();}
 function isToday(dk){return dk===todayKey();}
 function weekdayOf(dk){return new Date(dk+"T00:00:00").getDay();}
@@ -559,7 +560,7 @@ function seed(){
   return {
     version:1,
     profile:{nome:"Linn", xp:0, moedas:0},
-    config:{pin:"1234", tema:"light", hidratacaoMeta:6, notif:false, voz:true},
+    config:{pin:"1234", tema:"light", hidratacaoMeta:6, notif:false, voz:true, metaDia:100},
     rotina:[
       {id:uid(),dom:"mochila",titulo:"Preparar a mochila da escola",xp:15},
       {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",xp:25},
@@ -618,6 +619,21 @@ function totalDone(s){let n=0;Object.values(s.completions).forEach(day=>{n+=Obje
 function coinsFor(xp){return Math.max(2,Math.round(xp/5));}
 function isDone(id){const d=S.completions[todayKey()];return !!(d&&d[id]);}
 
+/* ---------- Pontos por dia (redistribuição mantendo a meta do dia) ---------- */
+function metaDia(){return Math.max(1,(S.config&&S.config.metaDia)||100);}
+function taskWeight(t){const w=(typeof t.peso==="number"&&t.peso>0)?t.peso:(t.xp||15);return w;}
+function dayTaskList(w){return S.rotina.filter(t=>taskOnDay(t,w));}
+/* Distribui a meta do dia entre as missões, proporcional ao peso; soma = meta exata */
+function ptsMap(w){
+  const list=dayTaskList(w); if(!list.length)return {};
+  const meta=metaDia(); const sw=list.reduce((a,t)=>a+taskWeight(t),0)||1;
+  const arr=list.map(t=>{const v=meta*taskWeight(t)/sw;return {id:t.id,p:Math.floor(v),frac:v-Math.floor(v)};});
+  let rem=meta-arr.reduce((a,o)=>a+o.p,0);
+  arr.slice().sort((a,b)=>b.frac-a.frac).slice(0,Math.max(0,rem)).forEach(o=>o.p++);
+  const m={};arr.forEach(o=>m[o.id]=o.p);return m;
+}
+function ptsFor(t,w){const m=ptsMap(w);return m[t.id]||0;}
+
 /* ---------- Toast + confete ---------- */
 let toastT;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1800);}
@@ -663,9 +679,10 @@ function toggleTask(t,rowEl){
   if(!was){
     const tier=comboTier();
     const mult=comboMult(tier);
-    const ganho=Math.round(t.xp*mult);
-    S.completions[tk][t.id]=ganho;               // guarda o XP concedido (p/ desfazer exato)
-    S.profile.xp+=ganho; S.profile.moedas+=coinsFor(t.xp);
+    const base=ptsFor(t,weekdayOf(tk));
+    const ganho=Math.round(base*mult);
+    S.completions[tk][t.id]=ganho;               // guarda os pontos concedidos (p/ desfazer exato)
+    S.profile.xp+=ganho; S.profile.moedas+=coinsFor(ganho);
     bumpStreakOnDone();
     if(rowEl){const sl=document.createElement("div");sl.className="slash go";rowEl.appendChild(sl);
       setTimeout(()=>sl.remove(),520);}
@@ -674,10 +691,10 @@ function toggleTask(t,rowEl){
     linnReact(tier+1);
     checkMedals();
   }else{
-    const ganho=typeof S.completions[tk][t.id]==="number"?S.completions[tk][t.id]:t.xp;
+    const ganho=typeof S.completions[tk][t.id]==="number"?S.completions[tk][t.id]:ptsFor(t,weekdayOf(tk));
     delete S.completions[tk][t.id];
     S.profile.xp=Math.max(0,S.profile.xp-ganho);
-    S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(t.xp));
+    S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(ganho));
   }
   save(); renderHero(); renderToday();
 }
@@ -898,6 +915,7 @@ function renderToday(){
   const tit=$("#missTitle");
   if(tit)tit.textContent = hoje ? "Missões de hoje" : "Missões de "+DIAS_LONGO[wd]+" ("+pad2(new Date(dk+"T00:00:00").getDate())+"/"+pad2(new Date(dk+"T00:00:00").getMonth()+1)+")";
   let any=false;
+  const mp=ptsMap(wd);
   DOM_ORDER.forEach(dom=>{
     const tasks=S.rotina.filter(t=>t.dom===dom && taskOnDay(t,wd));
     if(!tasks.length)return;any=true;
@@ -913,14 +931,18 @@ function renderToday(){
       row.innerHTML=`<div class="check">${done?"✓":""}</div>
         <div class="txt">${escapeHtml(t.titulo)}</div>
         ${t.horario?`<span class="meta">${t.horario}</span>`:""}
-        <span class="xpwin">+${t.xp}</span>`;
+        <span class="xpwin">+${mp[t.id]||0}</span>`;
       row.onclick=()=> hoje ? toggleTask(t,row)
         : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia.");
       g.appendChild(row);
     });
     box.appendChild(g);
   });
-  if(!any)box.innerHTML=`<div class="card empty">Nenhuma missão ${hoje?"hoje":"neste dia"}. Monte a rotina no modo 🛡️ Guardião e escolha os dias de cada missão.</div>`;
+  if(any){
+    const note=document.createElement("div");note.className="plan-note";
+    note.textContent="Meta do dia: "+metaDia()+" XP (os pontos se redistribuem entre as missões do dia).";
+    box.appendChild(note);
+  }else box.innerHTML=`<div class="card empty">Nenhuma missão ${hoje?"hoje":"neste dia"}. Monte a rotina no modo 🛡️ Guardião e escolha os dias de cada missão.</div>`;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
@@ -1099,7 +1121,18 @@ function bindPin(){
 function renderPais(){
   const p=$("#paisPanel");
   p.innerHTML=`
-   <div class="section-title" style="margin-top:16px">Rotina do Linn</div>
+   <div class="section-title" style="margin-top:16px">Missões por dia</div>
+   <div class="card" style="padding:12px 16px">
+     <div class="muted" style="font-size:12px;font-weight:600;margin-bottom:8px">Escolha um dia para incluir, editar ou excluir missões. Os pontos se redistribuem automaticamente dentro da meta do dia.</div>
+     <label class="fld" style="margin-top:0">Meta de XP por dia</label>
+     <div style="display:flex;gap:9px"><input id="cMetaDia" type="number" value="${metaDia()}" style="flex:1">
+       <button class="btn primary" id="saveMetaDia" style="width:auto;padding:0 16px">Salvar</button></div>
+     <div class="daychips" id="pdiaChips" style="margin-top:12px"></div>
+     <div id="pdiaList" style="margin-top:6px"></div>
+     <button class="btn ghost" id="addDiaBtn" style="margin-top:12px">＋ Nova missão nesse dia</button>
+   </div>
+
+   <div class="section-title">Todas as missões</div>
    <div id="paisRotina"></div>
    <button class="btn ghost" id="addTaskBtn" style="margin-top:12px">＋ Nova missão</button>
 
@@ -1160,9 +1193,8 @@ function renderPais(){
       const row=document.createElement("div");row.className="row";
       row.innerHTML=`<div style="flex:1">
           <div class="txt">${escapeHtml(t.titulo)}</div>
-          <div class="bs muted" style="font-size:11.5px;font-weight:700">${diasResumo(t)}${t.horario?" · "+t.horario:""}</div>
+          <div class="bs muted" style="font-size:11.5px;font-weight:700">${diasResumo(t)}${t.horario?" · "+t.horario:""} · peso ${taskWeight(t)}</div>
         </div>
-        <span class="xpwin">+${t.xp}</span>
         <button class="del" aria-label="Editar">✎</button>`;
       row.querySelector(".txt").parentElement.onclick=()=>sheetTask(t);
       row.querySelector(".del").onclick=e=>{e.stopPropagation();sheetTask(t);};
@@ -1170,6 +1202,7 @@ function renderPais(){
     });
     rot.appendChild(g);
   });
+  renderPaisDia();
 
   // recompensas
   const rw=$("#paisRew");rw.innerHTML="";
@@ -1233,6 +1266,9 @@ function renderPais(){
   $("#addTaskBtn").onclick=()=>sheetTask();
   $("#addRewBtn").onclick=()=>sheetReward();
   $("#addTreinoBtn").onclick=()=>sheetTreino();
+  $("#saveMetaDia").onclick=()=>{S.config.metaDia=Math.max(1,parseInt($("#cMetaDia").value)||100);
+    save();renderPaisDia();renderToday();toast("Meta do dia salva — pontos redistribuídos");};
+  $("#addDiaBtn").onclick=()=>sheetTask(null,PDIA);
   $("#saveFis").onclick=()=>{S.fisico.metaSemanal=Math.max(1,parseInt($("#fMeta").value)||100);
     S.fisico.mesada=Math.max(0,parseFloat($("#fMesada").value)||0);save();renderTreino();toast("Meta e mesada salvas");};
   $("#savePoup").onclick=()=>{S.poupanca.titulo=$("#pTitle").value||"Meu tesouro";
@@ -1253,11 +1289,12 @@ function openSheet(html){$("#sheetPanel").innerHTML=`<div class="grab"></div>`+h
 function closeSheet(){$("#sheet").classList.remove("open");}
 $("#sheet").onclick=e=>{if(e.target.id==="sheet")closeSheet();};
 
-function sheetTask(edit){
+function sheetTask(edit,preDay){
   const novo=!edit;
   let dom = edit? edit.dom : "estudos";
-  // dias selecionados: [1..6,0]; default todos para nova missão
-  let dias = edit && edit.dias && edit.dias.length ? edit.dias.slice() : [0,1,2,3,4,5,6];
+  // dias selecionados: [1..6,0]; default todos para nova missão (ou só preDay se vier do gerenciador por dia)
+  let dias = edit && edit.dias && edit.dias.length ? edit.dias.slice()
+            : (typeof preDay==="number" ? [preDay] : [0,1,2,3,4,5,6]);
   openSheet(`<h3>${novo?"Nova missão":"Editar missão"}</h3>
     <label class="fld">Trilha (área)</label><div class="chips" id="domChips"></div>
     <label class="fld">O que fazer</label><input id="tTitle" value="${edit?escapeHtml(edit.titulo):""}" placeholder="Ex.: Escovar os dentes">
@@ -1266,7 +1303,8 @@ function sheetTask(edit){
       <button class="chip" id="diasUteis" type="button">Seg a sex</button></div>
     <div class="daychips" id="diaChips"></div>
     <label class="fld">Horário (opcional)</label><input id="tTime" type="time" value="${edit&&edit.horario?edit.horario:""}">
-    <label class="fld">XP ao concluir</label><input id="tXp" type="number" value="${edit?edit.xp:15}">
+    <label class="fld">Peso / importância</label><input id="tXp" type="number" value="${edit?taskWeight(edit):15}">
+    <div class="muted" style="font-size:11.5px;font-weight:600;margin:5px 2px 0">Os pontos de cada dia são divididos entre as missões conforme o peso, somando sempre a meta do dia (${metaDia()} XP). Peso maior = mais pontos naquela missão.</div>
     <button class="btn primary" id="tSave" style="margin-top:16px">${novo?"Adicionar missão":"Salvar alterações"}</button>
     ${edit?`<button class="btn ghost" id="tDel" style="margin-top:9px;color:var(--ember)">Excluir missão</button>`:""}`);
   const chips=$("#domChips");
@@ -1285,11 +1323,11 @@ function sheetTask(edit){
     const titulo=$("#tTitle").value.trim();if(!titulo){toast("Escreva a missão");return;}
     if(!dias.length){toast("Escolha ao menos um dia");return;}
     const hor=$("#tTime").value;
-    const xp=Math.max(1,parseInt($("#tXp").value)||15);
+    const peso=Math.max(1,parseInt($("#tXp").value)||15);
     const ds=[0,1,2,3,4,5,6].filter(w=>dias.includes(w)); // ordena
-    if(edit){edit.dom=dom;edit.titulo=titulo;edit.xp=xp;edit.dias=ds; if(hor)edit.horario=hor; else delete edit.horario;}
-    else{const t={id:Math.random().toString(36).slice(2,9),dom,titulo,xp,dias:ds}; if(hor)t.horario=hor; S.rotina.push(t);}
-    save();closeSheet();renderPais();renderToday();renderReminder();toast(novo?"Missão adicionada":"Missão atualizada");
+    if(edit){edit.dom=dom;edit.titulo=titulo;edit.peso=peso;delete edit.xp;edit.dias=ds; if(hor)edit.horario=hor; else delete edit.horario;}
+    else{const t={id:Math.random().toString(36).slice(2,9),dom,titulo,peso,dias:ds}; if(hor)t.horario=hor; S.rotina.push(t);}
+    save();closeSheet();renderPais();renderToday();renderReminder();toast(novo?"Missão adicionada — pontos redistribuídos":"Missão atualizada — pontos redistribuídos");
   };
   if(edit)$("#tDel").onclick=()=>{S.rotina=S.rotina.filter(x=>x.id!==edit.id);save();closeSheet();renderPais();renderToday();renderReminder();toast("Missão removida");};
 }
@@ -1298,6 +1336,34 @@ function diasResumo(t){
   if(ds.length===7)return "Todos os dias";
   if(ds.length===5&&[1,2,3,4,5].every(w=>ds.includes(w)))return "Seg a sex";
   return [1,2,3,4,5,6,0].filter(w=>ds.includes(w)).map(w=>DIAS_CURTO[w]).join(", ");
+}
+/* Gerenciador de missões por dia (Guardião) */
+function renderPaisDia(){
+  const chips=$("#pdiaChips");if(!chips)return;chips.innerHTML="";
+  [1,2,3,4,5,6,0].forEach(w=>{const el=document.createElement("div");
+    el.className="dchip"+(w===PDIA?" on":"");el.textContent=DIAS_CURTO[w];
+    el.onclick=()=>{PDIA=w;renderPaisDia();};chips.appendChild(el);});
+  const list=$("#pdiaList");list.innerHTML="";
+  const mp=ptsMap(PDIA);
+  const tasks=S.rotina.filter(t=>taskOnDay(t,PDIA));
+  const soma=tasks.reduce((a,t)=>a+(mp[t.id]||0),0);
+  const head=document.createElement("div");head.className="plan-note";head.style.margin="8px 2px 2px";
+  head.textContent=tasks.length?`${tasks.length} missõe${tasks.length>1?"s":""} · soma ${soma}/${metaDia()} XP`:"Nenhuma missão neste dia ainda.";
+  list.appendChild(head);
+  tasks.forEach(t=>{
+    const row=document.createElement("div");row.className="rowedit";
+    row.innerHTML=`<div style="font-size:16px">${RESP[t.dom].icon}</div>
+      <div style="flex:1"><div style="font-weight:700;font-size:14px">${escapeHtml(t.titulo)}</div>
+        <div class="muted" style="font-size:11px;font-weight:600">${RESP[t.dom].sub}${t.horario?" · "+t.horario:""} · peso ${taskWeight(t)}</div></div>
+      <span class="xpwin">+${mp[t.id]||0}</span>
+      <button class="del" title="Editar">✎</button>
+      <button class="del" title="Excluir" style="color:var(--ember)">🗑</button>`;
+    const bts=row.querySelectorAll(".del");
+    bts[0].onclick=()=>sheetTask(t);
+    bts[1].onclick=()=>{ if(confirm("Excluir “"+t.titulo+"”? Os pontos serão redistribuídos."))
+      {S.rotina=S.rotina.filter(x=>x.id!==t.id);save();renderPais();renderToday();renderReminder();toast("Missão excluída — pontos redistribuídos");} };
+    list.appendChild(row);
+  });
 }
 function sheetReward(){
   openSheet(`<h3>Nova recompensa</h3>
@@ -1478,6 +1544,9 @@ function migrate(){
   if(!S.linn)S.linn={};
   if(typeof S.config.voz==="undefined")S.config.voz=true;
   if(typeof S.config.notif==="undefined")S.config.notif=false;
+  if(typeof S.config.metaDia!=="number")S.config.metaDia=100;
+  // peso por missão (converte xp antigo em peso; default 15)
+  (S.rotina||[]).forEach(t=>{ if(typeof t.peso!=="number"){t.peso=(typeof t.xp==="number"&&t.xp>0)?t.xp:15;} });
   if(!S.memoria)S.memoria={recordes:{sequencia:0,pares:0,lista:0}};
   if(!S.fisico){const uid=()=>Math.random().toString(36).slice(2,9);
     S.fisico={metaSemanal:100,mesada:20,catalogo:[
@@ -1589,12 +1658,12 @@ function agTreino(c){return logTreinoByText(norm(c.raw));}
 /* --- agentes especializados --- */
 function agTarefa(c){
   const titulo=cleanTitle(c.raw)||"Nova missão";
-  const xp=c.xp?Math.max(1,+c.xp):15;
-  const t={id:Math.random().toString(36).slice(2,9),dom:c.dom,titulo,xp};
+  const peso=c.xp?Math.max(1,+c.xp):15;
+  const t={id:Math.random().toString(36).slice(2,9),dom:c.dom,titulo,peso,dias:[0,1,2,3,4,5,6]};
   if(c.hora)t.horario=c.hora;
   S.rotina.push(t);save();refreshAll();
   const r=RESP[c.dom];
-  return {reply:`Feito ✓ Criei a missão “${titulo}” na Trilha ${r.nome} (${r.sub})${c.hora?" às "+c.hora:""}, valendo ${xp} XP.`,
+  return {reply:`Feito ✓ Criei a missão “${titulo}” na Trilha ${r.nome} (${r.sub})${c.hora?" às "+c.hora:""}. Pontos do dia redistribuídos (meta: ${metaDia()} XP).`,
     undo:()=>{S.rotina=S.rotina.filter(x=>x.id!==t.id);save();refreshAll();}};
 }
 function agAgenda(c){
@@ -1607,21 +1676,22 @@ function agAgenda(c){
     undo:()=>{S.agenda=S.agenda.filter(x=>x.id!==e.id);save();refreshAll();}};
 }
 function agConcluir(c){
-  const t=norm(c.raw);const tk=todayKey();S.completions[tk]=S.completions[tk]||{};
-  const undone=S.rotina.filter(x=>!S.completions[tk][x.id]);
+  const t=norm(c.raw);const tk=todayKey();const wd=weekdayOf(tk);S.completions[tk]=S.completions[tk]||{};
+  const mp=ptsMap(wd);
+  const undone=S.rotina.filter(x=>taskOnDay(x,wd)&&!S.completions[tk][x.id]);
   const explicitAll=/(meta do dia|tudo|todas|minhas missoes|missões do dia|do dia)/.test(t);
   let alvo=null;
   if(!explicitAll)alvo=undone.find(x=>{const kt=norm(x.titulo).split(" ").filter(w=>w.length>3);return kt.some(w=>t.includes(w));});
   const feitos=[];let ganho=0;
-  const marcar=list=>list.forEach(x=>{if(!S.completions[tk][x.id]){S.completions[tk][x.id]=true;
-    S.profile.xp+=x.xp;S.profile.moedas+=coinsFor(x.xp);ganho+=x.xp;feitos.push(x.id);}});
+  const marcar=list=>list.forEach(x=>{if(!S.completions[tk][x.id]){const g=mp[x.id]||0;
+    S.completions[tk][x.id]=g; S.profile.xp+=g;S.profile.moedas+=coinsFor(g);ganho+=g;feitos.push(x.id);}});
   marcar(alvo?[alvo]:undone);
   if(!feitos.length)return {reply:"Tudo já estava concluído por aqui. Mandou bem! 🌸"};
   bumpStreakOnDone();checkMedals();save();refreshAll();
   const nome=alvo?`“${alvo.titulo}”`:`${feitos.length} missõe${feitos.length>1?"s":""}`;
   return {reply:`Feito ✓ Marquei ${nome} como concluíd${feitos.length>1?"as":"a"}. +${ganho} XP! 🔥`,
-    undo:()=>{feitos.forEach(id=>{const k=S.rotina.find(x=>x.id===id);if(k){delete S.completions[tk][id];
-      S.profile.xp=Math.max(0,S.profile.xp-k.xp);S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(k.xp));}});save();refreshAll();}};
+    undo:()=>{feitos.forEach(id=>{const g=typeof S.completions[tk][id]==="number"?S.completions[tk][id]:0;delete S.completions[tk][id];
+      S.profile.xp=Math.max(0,S.profile.xp-g);S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(g));});save();refreshAll();}};
 }
 function agAgua(c){
   const tk=todayKey();const meta=S.config.hidratacaoMeta;const q=Math.max(1,Math.round(c.qtd||1));
