@@ -134,6 +134,56 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
   background:var(--night);font-size:12px;font-weight:800;cursor:pointer;color:var(--ink-2)}
 .dchip.on{background:var(--ember);border-color:var(--ember);color:#fff}
 
+/* JORNADA DE RECOMPENSAS */
+.premios{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none}
+.premios::-webkit-scrollbar{display:none}
+.premio{flex:none;width:92px;text-align:center;background:linear-gradient(160deg,rgba(243,195,32,.22),rgba(243,195,32,.05));
+  border:1px solid rgba(243,195,32,.45);border-radius:var(--r-md);padding:12px 8px}
+.premio .pm{font-size:28px}
+.premio .pt{font-size:11px;font-weight:800;margin-top:4px;line-height:1.15}
+.premio .pw{font-size:9.5px;color:var(--ink-3);font-weight:700;margin-top:3px}
+.rw-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-top:1px solid var(--line)}
+.rw-row:first-child{border-top:none}
+.rw-row .rw-i{font-size:20px;flex:none}
+.rw-row .rw-t{flex:1;font-weight:700;font-size:14.5px}
+.rw-row .rw-t small{display:block;font-weight:700;font-size:11px;color:var(--ink-3)}
+.rw-row .rw-b{border:none;border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}
+.rw-b.go{background:linear-gradient(135deg,var(--ember),#ff8a5c);color:#fff}
+.rw-b.lock{background:var(--surface-2);color:var(--ink-3)}
+.rw-b.wait{background:rgba(243,195,32,.22);color:#8a6d00}
+
+/* COMPROVAÇÃO (mídia) */
+.proof-btn{border:none;background:var(--surface-2);color:var(--ink-2);border-radius:999px;font-size:13px;font-weight:800;
+  padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.tl-cam{border:none;background:transparent;font-size:15px;cursor:pointer;color:var(--ink-3);padding:4px;flex:none}
+.media-opts{display:flex;gap:9px;margin-top:6px}
+.media-opts .mo{flex:1;border:1px solid var(--line-strong);background:var(--night-2);border-radius:var(--r-sm);
+  padding:14px 6px;text-align:center;font-weight:800;font-size:13px;cursor:pointer}
+.media-opts .mo .ic{font-size:22px;display:block;margin-bottom:4px}
+.media-prev{margin-top:12px;border-radius:var(--r-sm);overflow:hidden;background:var(--night-2);border:1px solid var(--line)}
+.media-prev img,.media-prev video{width:100%;display:block;max-height:240px;object-fit:contain;background:#000}
+.media-prev audio{width:100%;display:block}
+.cp-card{border:1px solid var(--line);border-radius:var(--r-md);padding:12px;margin-top:10px;background:var(--surface)}
+.cp-card .cp-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
+.cp-card .cp-when{font-size:11px;color:var(--ink-3);font-weight:700}
+.cp-actions{display:flex;gap:9px;margin-top:10px}
+.cp-badge{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px}
+.cp-pend{background:rgba(242,195,32,.2);color:#8a6d00}
+.cp-ok{background:rgba(124,179,66,.22);color:#3f6a18}
+.cp-no{background:rgba(210,59,46,.18);color:#a12a20}
+
+/* AVATAR FLUTUANTE */
+.linn-float{position:fixed;left:16px;bottom:calc(86px + var(--safe-b));z-index:45;width:66px;height:66px;border-radius:50%;
+  border:3px solid var(--night-2);cursor:pointer;background:var(--surface);box-shadow:0 10px 24px rgba(0,0,0,.3);
+  display:grid;place-items:center;padding:0;overflow:visible}
+.linn-float:active{transform:scale(.93)}
+.linn-float.pop{animation:linnpop .55s cubic-bezier(.2,1.4,.4,1)}
+.lf-stage{width:100%;height:100%;border-radius:50%;overflow:hidden;display:grid;place-items:center}
+.lf-stage svg,.lf-stage img{width:100%;height:100%;object-fit:cover}
+.lf-pct{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);background:var(--ember);color:#fff;
+  font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;box-shadow:var(--shadow-sm)}
+@media(min-width:521px){.linn-float{left:calc(50% - 260px + 16px)}}
+
 /* LINHA DO TEMPO */
 .tl{position:relative;margin-top:4px}
 .tl-item{display:flex;gap:11px;align-items:stretch;position:relative}
@@ -471,10 +521,13 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
       </div>
     </div>
 
-    <div class="section-title">Loja de recompensas</div>
+    <div id="premiosSlot"></div>
+    <div id="pedidosSlot"></div>
+
+    <div class="section-title">Jornada de recompensas</div>
     <div class="card shop" id="shopList"></div>
     <p class="muted" style="font-size:12px;margin:10px 8px;font-weight:600">
-      As recompensas são combinadas com os pais no modo Guardião.</p>
+      Peça o resgate quando tiver moedas suficientes. O papai e a mamãe validam no modo Guardião.</p>
   </section>
 
   <!-- PAIS -->
@@ -518,6 +571,10 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
 <div class="sheet" id="sheet"><div class="panel" id="sheetPanel"></div></div>
 
 <button class="fab" id="assistFab" aria-label="Falar com o KizAI"><span class="ping"></span>🐦‍⬛</button>
+<button class="linn-float" id="linnFloat" aria-label="Humor do Linn" style="display:none">
+  <div class="lf-stage" id="linnFloatStage"></div>
+  <span class="lf-pct" id="linnFloatPct">0%</span>
+</button>
 <div class="assist" id="assist">
   <div class="panel">
     <div class="ahead">
@@ -732,17 +789,28 @@ function toggleTask(t,rowEl){
 }
 
 /* ---------- Linn: companheiro reativo ---------- */
-function linnMood(){
+const MOODS=[
+  {k:"sono",     lb:"Com sono"},
+  {k:"chateado", lb:"Chateado"},
+  {k:"raiva",    lb:"Com raiva"},
+  {k:"serio",    lb:"Sério"},
+  {k:"ok",       lb:"Ok"},
+  {k:"tranquilo",lb:"Tranquilo"},
+  {k:"bem",      lb:"Tô bem"},
+  {k:"contente", lb:"Contente"},
+  {k:"feliz",    lb:"Feliz"},
+  {k:"radiante", lb:"Muito feliz! (dia 100%)"},
+];
+function moodIndex(){
   const tk=todayKey();const wd=weekdayOf(tk);
   const total=Math.max(1,S.rotina.filter(t=>taskOnDay(t,wd)).length);
   const feitas=Object.values(S.completions[tk]||{}).filter(Boolean).length;
   const r=feitas/total;
-  if(feitas===0)return "sono";
-  if(r>=1)return "campeao";
-  if(r>=0.8)return "euforia";
-  if(r>=0.4)return "feliz";
-  return "animado";
+  if(feitas===0)return 0;
+  if(r>=1)return 9;
+  return Math.min(8,Math.max(1,Math.round(r*9)));
 }
+function linnMood(){return MOODS[moodIndex()].k;}
 const LINN_FRASES={
   1:["Boa! 🍋","Começou bem!","Isso aí!"],
   2:["Mandou bem!","Tá voando!","Dois seguidos!"],
@@ -757,6 +825,7 @@ function linnReact(combo){
   const b=$("#linnBubble");if(b){b.textContent=txt;b.classList.add("show");clearTimeout(linnReact._t);
     linnReact._t=setTimeout(()=>b.classList.remove("show"),1900);}
   drawLinn(linnMood());
+  const fl=$("#linnFloat");if(fl&&S.config.avatarFlutuante){fl.classList.remove("pop");void fl.offsetWidth;fl.classList.add("pop");}
 }
 
 /* ---------- Render: HERO ---------- */
@@ -782,29 +851,44 @@ function renderHero(){
    Preencha com data URIs (base64) OU — mais fácil — use o modo Guardião →
    "Aparência do Linn" para escolher cada imagem (o app redimensiona e salva no aparelho).
    Deixe "" para usar o desenho padrão daquele estado. */
-const LINN_IMG = { sono:"", animado:"", feliz:"", euforia:"", campeao:"" };
+const LINN_IMG = { sono:"",chateado:"",raiva:"",serio:"",ok:"",tranquilo:"",bem:"",contente:"",feliz:"",radiante:"" };
 function linnSrc(mood){ return (S.linn && S.linn[mood]) || LINN_IMG[mood] || ""; }
 
-/* Linn: imagem (se houver) ou desenho SVG original de fallback */
+/* Linn: imagem (se houver) ou desenho SVG original de fallback (10 humores) */
 function drawLinn(mood){
   const stage=$("#linnStage");if(!stage)return;
   const src=linnSrc(mood);
   if(src){ stage.innerHTML=`<img class="linn-img" src="${src}" alt="Linn" draggable="false">`; return; }
-  const E={
-    sono:{olhos:`<path d="M34 50 q5 4 10 0" stroke="#5a3a1a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M56 50 q5 4 10 0" stroke="#5a3a1a" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
-      boca:`<path d="M44 64 q6 3 12 0" stroke="#7a4a2a" stroke-width="2.6" fill="none" stroke-linecap="round"/>`,
-      extra:`<text x="70" y="34" font-size="11" fill="var(--ink-3)">z</text><text x="78" y="26" font-size="8" fill="var(--ink-3)">z</text>`},
-    animado:{olhos:dots(),boca:`<path d="M42 62 q8 6 16 0" stroke="#7a4a2a" stroke-width="3" fill="none" stroke-linecap="round"/>`,extra:""},
-    feliz:{olhos:dots(),boca:`<path d="M40 60 q10 10 20 0" stroke="#7a4a2a" stroke-width="3" fill="#fff" stroke-linecap="round"/>`,extra:cheeks()},
-    euforia:{olhos:`<path d="M30 50 q6 -7 13 0" stroke="#c9352a" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M57 50 q6 -7 13 0" stroke="#c9352a" stroke-width="3.2" fill="none" stroke-linecap="round"/>`,
-      boca:`<path d="M38 58 q12 12 24 0 z" fill="#c9352a"/><path d="M42 61 q8 4 16 0" fill="#fff"/>`,extra:cheeks()+spark()},
-    campeao:{olhos:`<path d="M30 46 l4 7 8 1 -6 5 2 8 -8 -4 -8 4 2 -8 -6 -5 8 -1 z" fill="var(--thunder)" stroke="#c9352a" stroke-width="1"/><path d="M62 46 l4 7 8 1 -6 5 2 8 -8 -4 -8 4 2 -8 -6 -5 8 -1 z" fill="var(--thunder)" stroke="#c9352a" stroke-width="1" transform="translate(-8,0)"/>`,
-      boca:`<path d="M36 58 q14 14 28 0 z" fill="#c9352a"/><path d="M41 61 q9 5 18 0" fill="#fff"/>`,extra:cheeks()+spark()+crown()},
-  }[mood]||{olhos:dots(),boca:"",extra:""};
   function dots(){return `<ellipse cx="38" cy="50" rx="4" ry="5" fill="#c9352a"/><ellipse cx="62" cy="50" rx="4" ry="5" fill="#c9352a"/><circle cx="39.5" cy="48.5" r="1.4" fill="#fff"/><circle cx="63.5" cy="48.5" r="1.4" fill="#fff"/>`;}
+  function happyEyes(){return `<path d="M32 51 q6 -7 12 0" stroke="#5a3a1a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M56 51 q6 -7 12 0" stroke="#5a3a1a" stroke-width="3" fill="none" stroke-linecap="round"/>`;}
+  function sleepyEyes(){return `<path d="M34 50 q5 4 10 0" stroke="#5a3a1a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M56 50 q5 4 10 0" stroke="#5a3a1a" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;}
+  function halfEyes(){return `<path d="M33 49 h11" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round"/><path d="M56 49 h11" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round"/><ellipse cx="39" cy="53" rx="2.6" ry="3" fill="#5a3a1a"/><ellipse cx="61" cy="53" rx="2.6" ry="3" fill="#5a3a1a"/>`;}
+  function angryEyes(){return `<ellipse cx="38" cy="52" rx="3.4" ry="4" fill="#c9352a"/><ellipse cx="62" cy="52" rx="3.4" ry="4" fill="#c9352a"/><path d="M31 44 l13 4" stroke="#1b1b1b" stroke-width="3.2" stroke-linecap="round"/><path d="M69 44 l-13 4" stroke="#1b1b1b" stroke-width="3.2" stroke-linecap="round"/>`;}
+  function starEyes(){return `<path d="M30 46 l4 7 8 1 -6 5 2 8 -8 -4 -8 4 2 -8 -6 -5 8 -1 z" fill="var(--thunder)" stroke="#c9352a" stroke-width="1"/><path d="M62 46 l4 7 8 1 -6 5 2 8 -8 -4 -8 4 2 -8 -6 -5 8 -1 z" fill="var(--thunder)" stroke="#c9352a" stroke-width="1" transform="translate(-8,0)"/>`;}
+  function sadBrows(){return `<path d="M33 43 l11 -3" stroke="#7a6a4a" stroke-width="2.4" stroke-linecap="round"/><path d="M67 43 l-11 -3" stroke="#7a6a4a" stroke-width="2.4" stroke-linecap="round"/>`;}
   function cheeks(){return `<ellipse cx="30" cy="60" rx="5" ry="3" fill="#ef8a5b" opacity=".5"/><ellipse cx="70" cy="60" rx="5" ry="3" fill="#ef8a5b" opacity=".5"/>`;}
   function spark(){return `<text x="12" y="28" font-size="13">✨</text><text x="74" y="70" font-size="12">✨</text>`;}
   function crown(){return `<text x="40" y="12" font-size="16">👑</text>`;}
+  const smileXS=`<path d="M45 63 q5 3 10 0" stroke="#7a4a2a" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  const smileS =`<path d="M44 62 q6 5 12 0" stroke="#7a4a2a" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
+  const smileM =`<path d="M42 61 q8 7 16 0" stroke="#7a4a2a" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  const smileBig=`<path d="M40 60 q10 10 20 0" stroke="#7a4a2a" stroke-width="3" fill="#fff" stroke-linecap="round"/>`;
+  const openBig =`<path d="M38 58 q12 12 24 0 z" fill="#c9352a"/><path d="M42 61 q8 4 16 0" fill="#fff"/>`;
+  const flat   =`<path d="M44 63 h12" stroke="#7a4a2a" stroke-width="2.6" stroke-linecap="round"/>`;
+  const frownS =`<path d="M44 65 q6 -4 12 0" stroke="#7a4a2a" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  const frownM =`<path d="M43 66 q7 -6 14 0" stroke="#7a4a2a" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
+  const E={
+    sono:     {olhos:sleepyEyes(), boca:smileXS, extra:`<text x="70" y="34" font-size="11" fill="var(--ink-3)">z</text><text x="78" y="26" font-size="8" fill="var(--ink-3)">z</text>`},
+    chateado: {olhos:halfEyes()+sadBrows(), boca:frownS, extra:""},
+    raiva:    {olhos:angryEyes(), boca:frownM, extra:`<text x="70" y="30" font-size="13">💢</text>`},
+    serio:    {olhos:dots(), boca:flat, extra:""},
+    ok:       {olhos:dots(), boca:smileXS, extra:""},
+    tranquilo:{olhos:happyEyes(), boca:smileS, extra:""},
+    bem:      {olhos:dots(), boca:smileM, extra:""},
+    contente: {olhos:dots(), boca:smileBig, extra:cheeks()},
+    feliz:    {olhos:happyEyes(), boca:smileBig, extra:cheeks()},
+    radiante: {olhos:starEyes(), boca:openBig, extra:cheeks()+spark()+crown()},
+  }[mood]||{olhos:dots(),boca:smileS,extra:""};
   stage.innerHTML=`<svg viewBox="0 0 100 100" aria-label="Linn">
     <g>
       <path d="M50 16 q6 -6 10 -2 q5 -8 11 -2 q7 2 4 10 l-2 4" fill="#6fa82e" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
@@ -815,6 +899,20 @@ function drawLinn(mood){
       ${E.boca}
       ${E.extra}
     </g></svg>`;
+  updateLinnFloat(mood);
+}
+/* Avatar flutuante: espelha o humor e fica sempre visível (opcional) */
+function updateLinnFloat(mood){
+  const fl=$("#linnFloat"), st=$("#linnFloatStage");if(!fl||!st)return;
+  const on=!!(S.config&&S.config.avatarFlutuante);
+  fl.style.display=on?"grid":"none";
+  if(!on)return;
+  const stg=$("#linnStage");
+  if(stg)st.innerHTML=stg.innerHTML; // reaproveita o rosto já desenhado
+  const xp=S.profile.xp, ri=rankIndex(xp);
+  const base=RANK_XP[ri], next=RANK_XP[Math.min(ri+1,RANK_XP.length-1)];
+  const span=Math.max(1,next-base), prog=ri>=RANKS.length-1?1:Math.min(1,(xp-base)/span);
+  const pc=$("#linnFloatPct");if(pc)pc.textContent=Math.round(prog*100)+"%";
 }
 /* Lê uma imagem, recorta/reduz para 256px e guarda como data URI no aparelho */
 function processLinnImage(file,cb){
@@ -838,7 +936,7 @@ function loadLinnFile(mood,file){
   processLinnImage(file,url=>{S.linn=S.linn||{};S.linn[mood]=url;save();renderHero();renderPais();toast("Imagem do Linn atualizada ✓");});
 }
 function loadLinnAll(file){
-  processLinnImage(file,url=>{S.linn={sono:url,animado:url,feliz:url,euforia:url,campeao:url};
+  processLinnImage(file,url=>{S.linn={};MOODS.forEach(m=>S.linn[m.k]=url);
     save();renderHero();renderPais();toast("Avatar definido para todos os humores ✓");});
 }
 function renderReminder(){
@@ -972,10 +1070,13 @@ function renderToday(){
         <div class="tci" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
         <div class="tct"><div class="ti2">${escapeHtml(t.titulo)}</div><div class="sb">${r.sub}</div></div>
         <span class="pts2">+${mp[t.id]||0}</span>
+        ${hoje?`<button class="tl-cam" title="Enviar comprovação">📎</button>`:""}
         <div class="chk">${done?"✓":""}</div>
       </div>`;
-    it.querySelector(".tl-card").onclick=()=> hoje ? toggleTask(t,it)
-      : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia.");
+    const card=it.querySelector(".tl-card");
+    card.onclick=(e)=>{ if(e.target.closest(".tl-cam"))return;
+      hoje ? toggleTask(t,it) : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia."); };
+    const cam=it.querySelector(".tl-cam");if(cam)cam.onclick=e=>{e.stopPropagation();sheetComprovar(t);};
     tl.appendChild(it);
   });
   box.appendChild(tl);
@@ -991,18 +1092,126 @@ function renderToday(){
       row.innerHTML=`<div class="check">${done?"✓":""}</div>
         <div style="width:26px;text-align:center">${r.icon}</div>
         <div class="txt">${escapeHtml(t.titulo)}</div>
-        <span class="xpwin">+${mp[t.id]||0}</span>`;
-      row.onclick=()=> hoje ? toggleTask(t,row)
-        : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia.");
+        <span class="xpwin">+${mp[t.id]||0}</span>
+        ${hoje?`<button class="tl-cam" title="Enviar comprovação">📎</button>`:""}`;
+      row.onclick=(e)=>{ if(e.target.closest(".tl-cam"))return;
+        hoje ? toggleTask(t,row) : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia."); };
+      const cam=row.querySelector(".tl-cam");if(cam)cam.onclick=e=>{e.stopPropagation();sheetComprovar(t);};
       grp.appendChild(row);
     });
     box.appendChild(grp);
+  }
+  if(hoje){
+    const cpBtn=document.createElement("button");cpBtn.className="btn ghost";cpBtn.style.marginTop="14px";
+    cpBtn.innerHTML="📸 Enviar comprovação do dia";
+    cpBtn.onclick=()=>sheetComprovar(null);
+    box.appendChild(cpBtn);
   }
   const note=document.createElement("div");note.className="plan-note";note.style.marginTop="12px";
   note.textContent="Meta do dia: "+metaDia()+" XP · os pontos se redistribuem entre as atividades.";
   box.appendChild(note);
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ========== COMPROVAÇÃO POR MÍDIA (foto/áudio/vídeo, no aparelho) ========== */
+let _kdb=null;
+function idb(){return new Promise((res,rej)=>{ if(_kdb)return res(_kdb);
+  try{const r=indexedDB.open("kizuna_media",1);
+    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains("media"))r.result.createObjectStore("media",{keyPath:"id"});};
+    r.onsuccess=()=>{_kdb=r.result;res(_kdb);}; r.onerror=()=>rej(r.error);
+  }catch(e){rej(e);} });}
+function idbPut(id,blob){return idb().then(db=>new Promise((res,rej)=>{const tx=db.transaction("media","readwrite");
+  tx.objectStore("media").put({id,blob,type:blob.type});tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);}));}
+function idbGet(id){return idb().then(db=>new Promise((res,rej)=>{const tx=db.transaction("media","readonly");
+  const rq=tx.objectStore("media").get(id);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);}));}
+function idbDel(id){return idb().then(db=>new Promise((res)=>{const tx=db.transaction("media","readwrite");
+  tx.objectStore("media").delete(id);tx.oncomplete=()=>res();tx.onerror=()=>res();})).catch(()=>{});}
+
+function sheetComprovar(task){
+  const titulo = task ? task.titulo : "Meta do dia";
+  let tipo=null, file=null;
+  openSheet(`<h3>Enviar comprovação</h3>
+    <div class="muted" style="font-size:13px;font-weight:600;margin-bottom:4px">Mostre para o papai e a mamãe que você cumpriu: <b>${escapeHtml(titulo)}</b></div>
+    <div class="media-opts">
+      <label class="mo"><span class="ic">📷</span>Foto<input type="file" accept="image/*" capture="environment" style="display:none"></label>
+      <label class="mo"><span class="ic">🎥</span>Vídeo<input type="file" accept="video/*" capture="environment" style="display:none"></label>
+      <label class="mo"><span class="ic">🎤</span>Áudio<input type="file" accept="audio/*" capture style="display:none"></label>
+    </div>
+    <div id="cpPrev"></div>
+    <label class="fld">Recadinho (opcional)</label><input id="cpNota" placeholder="Ex.: Olha como ficou!">
+    <button class="btn primary" id="cpSend" style="margin-top:16px" disabled>Enviar para os pais</button>`);
+  const prev=$("#cpPrev");
+  $$(".media-opts input",$("#sheetPanel")).forEach(inp=>{
+    inp.onchange=e=>{const f=e.target.files[0];if(!f)return;file=f;
+      tipo = f.type.startsWith("image")?"foto":f.type.startsWith("video")?"video":"audio";
+      const url=URL.createObjectURL(f);
+      prev.innerHTML=`<div class="media-prev">${tipo==="foto"?`<img src="${url}">`:tipo==="video"?`<video src="${url}" controls playsinline></video>`:`<audio src="${url}" controls></audio>`}</div>`;
+      $("#cpSend").disabled=false;
+    };
+  });
+  $("#cpSend").onclick=()=>{
+    if(!file){toast("Escolha uma foto, vídeo ou áudio");return;}
+    const id=Math.random().toString(36).slice(2,10);
+    idbPut(id,file).then(()=>{
+      S.comprovacoes.push({id:Math.random().toString(36).slice(2,9),taskId:task?task.id:null,titulo,
+        tipo,mediaId:id,nota:$("#cpNota").value.trim(),data:todayKey(),ts:Date.now(),status:"pendente"});
+      save();closeSheet();toast("Comprovação enviada aos pais 📨");confetti();
+    }).catch(()=>toast("Não consegui salvar a mídia neste aparelho"));
+  };
+}
+
+/* Revisão pelos pais (Guardião) */
+function renderComprov(){
+  const box=$("#paisComprov");if(!box)return;box.innerHTML="";
+  const pend=S.comprovacoes.filter(c=>c.status==="pendente").sort((a,b)=>b.ts-a.ts);
+  const outras=S.comprovacoes.filter(c=>c.status!=="pendente").sort((a,b)=>b.ts-a.ts).slice(0,10);
+  if(!S.comprovacoes.length){box.innerHTML=`<div class="empty">Nenhuma comprovação enviada ainda.</div>`;return;}
+  const render=c=>{
+    const card=document.createElement("div");card.className="cp-card";
+    const dt=new Date(c.ts);const when=`${pad2(dt.getDate())}/${pad2(dt.getMonth()+1)} ${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
+    const badge=c.status==="pendente"?`<span class="cp-badge cp-pend">pendente</span>`:c.status==="aprovada"?`<span class="cp-badge cp-ok">aprovada ✓</span>`:`<span class="cp-badge cp-no">recusada</span>`;
+    const icon=c.tipo==="foto"?"📷":c.tipo==="video"?"🎥":"🎤";
+    card.innerHTML=`<div class="cp-h">${icon} ${escapeHtml(c.titulo)} ${badge}</div>
+      <div class="cp-when">${when}${c.nota?` · “${escapeHtml(c.nota)}”`:""}</div>
+      <div class="media-prev" data-media="${c.mediaId}" data-tipo="${c.tipo}" style="margin-top:8px">carregando…</div>
+      ${c.status==="pendente"?`<div class="cp-actions">
+        <button class="btn primary cpOk" style="flex:1">Aprovar ✓</button>
+        <button class="btn ghost cpNo" style="flex:1;color:var(--ember)">Recusar</button></div>`:
+        `<button class="btn ghost cpDel" style="margin-top:8px;color:var(--ink-3)">Remover</button>`}`;
+    const slot=card.querySelector(".media-prev");
+    idbGet(c.mediaId).then(rec=>{ if(!rec||!rec.blob){slot.innerHTML=`<div class="empty" style="padding:12px">Mídia não encontrada neste aparelho.</div>`;return;}
+      const url=URL.createObjectURL(rec.blob);
+      slot.innerHTML = c.tipo==="foto"?`<img src="${url}">`:c.tipo==="video"?`<video src="${url}" controls playsinline></video>`:`<audio src="${url}" controls></audio>`;
+    }).catch(()=>{slot.innerHTML=`<div class="empty" style="padding:12px">Não consegui abrir a mídia.</div>`;});
+    const ok=card.querySelector(".cpOk");if(ok)ok.onclick=()=>{c.status="aprovada";save();toast("Comprovação aprovada ✓");renderComprov();renderPais();};
+    const no=card.querySelector(".cpNo");if(no)no.onclick=()=>{c.status="recusada";save();toast("Comprovação recusada");renderComprov();renderPais();};
+    const del=card.querySelector(".cpDel");if(del)del.onclick=()=>{idbDel(c.mediaId);S.comprovacoes=S.comprovacoes.filter(x=>x.id!==c.id);save();renderComprov();renderPais();};
+    box.appendChild(card);
+  };
+  if(pend.length){const h=document.createElement("div");h.className="plan-note";h.textContent="A revisar:";box.appendChild(h);pend.forEach(render);}
+  if(outras.length){const h=document.createElement("div");h.className="plan-note";h.style.marginTop="10px";h.textContent="Histórico:";box.appendChild(h);outras.forEach(render);}
+}
+function comprovPendentes(){return S.comprovacoes.filter(c=>c.status==="pendente").length;}
+
+/* Validação de resgates (Guardião) */
+function renderResgates(){
+  const box=$("#paisResgates");if(!box)return;box.innerHTML="";
+  const pend=S.resgates.filter(x=>x.status==="solicitado").sort((a,b)=>b.ts-a.ts);
+  const hist=S.resgates.filter(x=>x.status!=="solicitado").sort((a,b)=>b.ts-a.ts).slice(0,8);
+  if(!S.resgates.length){box.innerHTML=`<div class="empty">Nenhum pedido de resgate ainda.</div>`;return;}
+  pend.forEach(x=>{const row=document.createElement("div");row.className="rowedit";
+    row.innerHTML=`<div style="flex:1"><div style="font-weight:700">${escapeHtml(x.titulo)}</div>
+      <div class="muted" style="font-size:11px;font-weight:700">🪙 ${x.custo} · pedido pela criança</div></div>
+      <button class="btn primary vOk" style="width:auto;padding:0 12px">✓</button>
+      <button class="btn ghost vNo" style="width:auto;padding:0 12px;color:var(--ember)">✕</button>`;
+    row.querySelector(".vOk").onclick=()=>validarResgate(x.id,true);
+    row.querySelector(".vNo").onclick=()=>validarResgate(x.id,false);
+    box.appendChild(row);});
+  hist.forEach(x=>{const row=document.createElement("div");row.className="rowedit";
+    const st=x.status==="aprovado"?`<span class="cp-badge cp-ok">aprovado</span>`:`<span class="cp-badge cp-no">recusado</span>`;
+    row.innerHTML=`<div style="flex:1">${escapeHtml(x.titulo)} ${st}</div><span class="xpwin">🪙 ${x.custo}</span>`;
+    box.appendChild(row);});
+}
 
 /* ---------- Render: TESOURO ---------- */
 function renderTesouro(){
@@ -1011,20 +1220,64 @@ function renderTesouro(){
   $("#vaultAtual").textContent="R$ "+fmt(p.atual);
   $("#vaultMeta").textContent="meta R$ "+fmt(p.meta);
   $("#vaultBar").style.width=Math.min(100,p.meta>0?(p.atual/p.meta*100):0)+"%";
+  // Prêmios recebidos (resgates aprovados)
+  const prem=$("#premiosSlot");prem.innerHTML="";
+  const recebidos=S.resgates.filter(x=>x.status==="aprovado").sort((a,b)=>b.ts-a.ts);
+  if(recebidos.length){
+    prem.innerHTML=`<div class="section-title">🏆 Prêmios recebidos</div>`;
+    const wrap=document.createElement("div");wrap.className="card";wrap.style.padding="12px";
+    const row=document.createElement("div");row.className="premios";
+    recebidos.forEach(x=>{const d=new Date(x.ts);
+      const el=document.createElement("div");el.className="premio";
+      el.innerHTML=`<div class="pm">🎁</div><div class="pt">${escapeHtml(x.titulo)}</div><div class="pw">${pad2(d.getDate())}/${pad2(d.getMonth()+1)}</div>`;
+      row.appendChild(el);});
+    wrap.appendChild(row);prem.appendChild(wrap);
+  }
+  // Pedidos em análise
+  const ped=$("#pedidosSlot");ped.innerHTML="";
+  const emAnalise=S.resgates.filter(x=>x.status==="solicitado");
+  if(emAnalise.length){
+    ped.innerHTML=`<div class="section-title">Pedidos em análise</div>`;
+    const wrap=document.createElement("div");wrap.className="card";wrap.style.padding="4px 15px";
+    emAnalise.forEach(x=>{const row=document.createElement("div");row.className="rw-row";
+      row.innerHTML=`<div class="rw-i">⏳</div><div class="rw-t">${escapeHtml(x.titulo)}<small>aguardando o papai/mamãe validar</small></div>
+        <span class="rw-b wait">🪙 ${x.custo}</span>`;
+      wrap.appendChild(row);});
+    ped.appendChild(wrap);
+  }
+  // Loja / jornada
   const shop=$("#shopList");shop.innerHTML="";
-  if(!S.recompensas.length){shop.innerHTML=`<div class="empty">Sem recompensas cadastradas.</div>`;}
+  if(!S.recompensas.length){shop.innerHTML=`<div class="empty">Sem recompensas cadastradas. Peça a um guardião para criar no modo 🛡️.</div>`;return;}
   S.recompensas.forEach(r=>{
+    const pedido=S.resgates.find(x=>x.recompensaId===r.id&&x.status==="solicitado");
     const ok=S.profile.moedas>=r.custo;
-    const row=document.createElement("div");row.className="row";row.style.cursor="default";
-    row.innerHTML=`<div style="font-size:20px">🎁</div><div class="txt">${escapeHtml(r.titulo)}</div>
-      <button class="buy" ${ok?"":"disabled"}>🪙 ${r.custo}</button>`;
-    row.querySelector(".buy").onclick=()=>{
-      if(S.profile.moedas<r.custo)return;
-      S.profile.moedas-=r.custo;save();renderHero();renderTesouro();
-      toast("Recompensa resgatada! 🎉");confetti();
-    };
+    const row=document.createElement("div");row.className="rw-row";
+    let btn;
+    if(pedido){btn=`<span class="rw-b wait">pedido enviado ⏳</span>`;}
+    else if(ok){btn=`<button class="rw-b go">Pedir resgate · 🪙${r.custo}</button>`;}
+    else {btn=`<span class="rw-b lock">faltam ${r.custo-S.profile.moedas} 🪙</span>`;}
+    row.innerHTML=`<div class="rw-i">${ok||pedido?"🎁":"🔒"}</div>
+      <div class="rw-t">${escapeHtml(r.titulo)}<small>${pedido?"em análise":ok?"recompensa alcançada!":"continue nas missões"}</small></div>
+      ${btn}`;
+    const b=row.querySelector("button.go");if(b)b.onclick=()=>pedirResgate(r);
     shop.appendChild(row);
   });
+}
+function pedirResgate(r){
+  if(S.resgates.some(x=>x.recompensaId===r.id&&x.status==="solicitado")){toast("Esse pedido já foi enviado");return;}
+  if(S.profile.moedas<r.custo){toast("Ainda faltam moedas");return;}
+  S.resgates.push({id:Math.random().toString(36).slice(2,9),recompensaId:r.id,titulo:r.titulo,custo:r.custo,ts:Date.now(),status:"solicitado",data:todayKey()});
+  save();renderTesouro();toast("Pedido de resgate enviado aos pais! 📨");
+}
+function resgatesPendentes(){return S.resgates.filter(x=>x.status==="solicitado").length;}
+function validarResgate(id,aprovar){
+  const x=S.resgates.find(r=>r.id===id);if(!x)return;
+  if(aprovar){
+    if(S.profile.moedas<x.custo){toast("A criança não tem moedas suficientes agora");return;}
+    S.profile.moedas-=x.custo;x.status="aprovado";x.ts=Date.now();
+    save();renderHero();toast("Resgate aprovado! 🎉");confetti();
+  }else{x.status="recusado";x.ts=Date.now();save();toast("Resgate recusado");}
+  renderPais();renderTesouro();
 }
 function fmt(n){return (Math.round(n*100)/100).toLocaleString("pt-BR");}
 
@@ -1178,8 +1431,15 @@ function bindPin(){
 }
 function renderPais(){
   const p=$("#paisPanel");
+  const nPend=comprovPendentes();
   p.innerHTML=`
-   <div class="section-title" style="margin-top:16px">Missões por dia</div>
+   <div class="section-title" style="margin-top:16px">Comprovações${nPend?` · <span style="color:var(--ember)">${nPend} a revisar</span>`:""}</div>
+   <div class="card" style="padding:12px 16px" id="paisComprov"></div>
+
+   <div class="section-title">Resgates${resgatesPendentes()?` · <span style="color:var(--ember)">${resgatesPendentes()} a validar</span>`:""}</div>
+   <div class="card" style="padding:6px 16px" id="paisResgates"></div>
+
+   <div class="section-title">Missões por dia</div>
    <div class="card" style="padding:12px 16px">
      <div class="muted" style="font-size:12px;font-weight:600;margin-bottom:8px">Escolha um dia para incluir, editar ou excluir missões. Os pontos se redistribuem automaticamente dentro da meta do dia.</div>
      <label class="fld" style="margin-top:0">Meta de XP por dia</label>
@@ -1228,6 +1488,10 @@ function renderPais(){
      <label class="fld">Nome da criança</label><input id="cName" value="${escapeHtml(S.profile.nome)}">
      <label class="fld">Meta diária de copos de água</label><input id="cHydro" type="number" value="${S.config.hidratacaoMeta}">
      <label class="fld">PIN do guardião (4 dígitos)</label><input id="cPin" inputmode="numeric" maxlength="4" value="${S.config.pin}">
+     <label class="switch" style="display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer">
+       <input type="checkbox" id="cFloat" ${S.config.avatarFlutuante?"checked":""} style="width:auto">
+       <span style="font-weight:700;font-size:14px">Avatar flutuante do Linn<br><span class="muted" style="font-size:11px;font-weight:600">o rostinho fica sempre visível na tela</span></span>
+     </label>
      <button class="btn primary" id="saveCfg" style="margin-top:14px">Salvar ajustes</button>
      <div style="display:flex;gap:9px;margin-top:12px">
        <button class="btn ghost" id="expBtn" style="width:auto;flex:1">Exportar backup</button>
@@ -1261,6 +1525,8 @@ function renderPais(){
     rot.appendChild(g);
   });
   renderPaisDia();
+  renderComprov();
+  renderResgates();
 
   // recompensas
   const rw=$("#paisRew");rw.innerHTML="";
@@ -1282,7 +1548,7 @@ function renderPais(){
   const lc=$("#linnCfg");lc.innerHTML="";
   // opção: uma única foto para todos os humores
   const allRow=document.createElement("div");allRow.className="linn-row";
-  const temFoto=["sono","animado","feliz","euforia","campeao"].some(m=>linnSrc(m));
+  const temFoto=MOODS.some(m=>linnSrc(m.k));
   allRow.innerHTML=`<div class="linn-prev" style="display:grid;place-items:center;font-size:16px">📷</div>
     <div class="nm">Usar uma única foto<br><span class="muted" style="font-size:11px;font-weight:600">mesma imagem em todos os humores</span></div>
     ${temFoto?`<button class="clr" title="Voltar ao desenho">✕</button>`:""}
@@ -1294,13 +1560,12 @@ function renderPais(){
   const allClr=allRow.querySelector(".clr");if(allClr)allClr.onclick=()=>{S.linn={};save();renderHero();renderPais();toast("Avatar voltou ao desenho padrão");};
   lc.appendChild(allRow);
   const sep=document.createElement("div");sep.className="plan-note";sep.style.margin="8px 0 2px";
-  sep.textContent="Ou uma imagem diferente por humor:";lc.appendChild(sep);
-  const LINN_ESTADOS=[["sono","Cansado / início do dia"],["animado","Animado"],["feliz","Feliz"],["euforia","Eufórico"],["campeao","Campeão (dia 100%)"]];
-  LINN_ESTADOS.forEach(([mood,label])=>{
+  sep.textContent="Ou uma imagem por humor (10 níveis, do pior ao melhor):";lc.appendChild(sep);
+  MOODS.forEach(({k:mood,lb:label},i)=>{
     const src=linnSrc(mood);
     const row=document.createElement("div");row.className="linn-row";
-    row.innerHTML=`${src?`<img class="linn-prev" src="${src}" alt="">`:`<div class="linn-prev" style="display:grid;place-items:center;font-size:11px;color:var(--ink-3)">SVG</div>`}
-      <div class="nm">${label}</div>
+    row.innerHTML=`${src?`<img class="linn-prev" src="${src}" alt="">`:`<div class="linn-prev" style="display:grid;place-items:center;font-size:11px;color:var(--ink-3)">${i+1}</div>`}
+      <div class="nm">${i+1}. ${label}</div>
       ${src?`<button class="clr" title="Usar desenho padrão">✕</button>`:""}
       <button class="pick">Imagem…</button>
       <input type="file" accept="image/*" style="display:none">`;
@@ -1333,8 +1598,9 @@ function renderPais(){
     S.poupanca.meta=Math.max(0,parseFloat($("#pMeta").value)||0);save();renderTesouro();toast("Poupança salva");};
   $("#saveCfg").onclick=()=>{S.profile.nome=$("#cName").value||"Linn";
     S.config.hidratacaoMeta=Math.max(1,Math.min(12,parseInt($("#cHydro").value)||6));
+    S.config.avatarFlutuante=$("#cFloat").checked;
     const np=$("#cPin").value.replace(/\D/g,"");if(np.length===4)S.config.pin=np;
-    save();renderHero();renderHydro();toast("Ajustes salvos");};
+    save();renderHero();renderHydro();updateLinnFloat(linnMood());toast("Ajustes salvos");};
   $("#expBtn").onclick=exportBackup;
   $("#impBtn").onclick=()=>$("#impFile").click();
   $("#impFile").onchange=importBackup;
@@ -1611,6 +1877,9 @@ function migrate(){
   if(typeof S.config.voz==="undefined")S.config.voz=true;
   if(typeof S.config.notif==="undefined")S.config.notif=false;
   if(typeof S.config.metaDia!=="number")S.config.metaDia=100;
+  if(typeof S.config.avatarFlutuante!=="boolean")S.config.avatarFlutuante=false;
+  if(!S.comprovacoes)S.comprovacoes=[];
+  if(!S.resgates)S.resgates=[];
   // peso por missão (converte xp antigo em peso; default 15) e horario -> inicio
   (S.rotina||[]).forEach(t=>{ if(typeof t.peso!=="number"){t.peso=(typeof t.xp==="number"&&t.xp>0)?t.xp:15;}
     if(!t.inicio&&t.horario){t.inicio=t.horario;delete t.horario;} });
@@ -1696,6 +1965,8 @@ function cleanTitle(raw){
 function classify(raw){
   const t=norm(raw);
   const data=extractDate(t), hora=extractTime(t), dom=detectDomain(t);
+  if(/(comprova|comprovar|mandar (uma )?(foto|video|audio)|enviar (uma )?(foto|video|audio)|tirar (uma )?foto|gravar (um )?(video|audio)|mostrar (pro|para) (papai|mamae|meus pais)|provar que)/.test(t))
+    return {intent:"comprovar", raw};
   if(/\bagua\b/.test(t) && /(bebi|tomei|copo|beber|hidrat|tomar agua|bebe)/.test(t))
     return {intent:"agua", raw, qtd:extractNumber(t)||1};
   if( /(treinei|\btreino\b|corri|corrida|pedalei|pedalar|\bnadei\b|natacao|caminhei|caminhada|dancei|\bdanca\b|alonguei|malhei|academia|joguei (bola|futebol)|jogar bola)/.test(t)
@@ -1722,6 +1993,14 @@ function classify(raw){
 }
 function refreshAll(){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();renderTesouro();renderDojo();renderTreino();}
 function agTreino(c){return logTreinoByText(norm(c.raw));}
+function agComprovar(c){
+  const t=norm(c.raw);const tk=todayKey();const wd=weekdayOf(tk);
+  const hoje=S.rotina.filter(x=>taskOnDay(x,wd));
+  const alvo=hoje.find(x=>{const kt=norm(x.titulo).split(" ").filter(w=>w.length>3);return kt.some(w=>t.includes(w));});
+  setTimeout(()=>{closeAssist();sheetComprovar(alvo||null);},250);
+  return {reply:alvo?`Vou abrir para você mandar a comprovação de “${alvo.titulo}” pros seus pais 📸`
+    :"Vou abrir para você mandar uma foto, vídeo ou áudio pros seus pais 📸"};
+}
 /* --- agentes especializados --- */
 function agTarefa(c){
   const titulo=cleanTitle(c.raw)||"Nova missão";
@@ -1780,9 +2059,12 @@ function agRecompensa(c){
   if(!alvo){ if(S.recompensas.length)return {reply:"Qual recompensa? Você tem: "+S.recompensas.map(r=>`${r.titulo} (🪙${r.custo})`).join(", ")+"."};
     return {reply:"Ainda não há recompensas cadastradas. Um guardião pode criar no modo 🛡️."};}
   if(S.profile.moedas<alvo.custo)return {reply:`Ainda faltam ${alvo.custo-S.profile.moedas} moedas para “${alvo.titulo}”. Continue nas missões! 💪`};
-  S.profile.moedas-=alvo.custo;save();refreshAll();
-  return {reply:`Feito ✓ Resgatei “${alvo.titulo}” por 🪙${alvo.custo}. Aproveite! 🎉`,
-    undo:()=>{S.profile.moedas+=alvo.custo;save();refreshAll();}};
+  if(S.resgates.some(x=>x.recompensaId===alvo.id&&x.status==="solicitado"))
+    return {reply:`O pedido de “${alvo.titulo}” já foi enviado e está aguardando o papai/mamãe validar ⏳`};
+  const rg={id:Math.random().toString(36).slice(2,9),recompensaId:alvo.id,titulo:alvo.titulo,custo:alvo.custo,ts:Date.now(),status:"solicitado",data:todayKey()};
+  S.resgates.push(rg);save();refreshAll();
+  return {reply:`Feito ✓ Pedi o resgate de “${alvo.titulo}” (🪙${alvo.custo}). Agora é só o papai/mamãe validar! 📨`,
+    undo:()=>{S.resgates=S.resgates.filter(x=>x.id!==rg.id);save();refreshAll();}};
 }
 function agStatus(){
   const ri=rankIndex(S.profile.xp);const next=RANK_XP[Math.min(ri+1,RANK_XP.length-1)];
@@ -1802,8 +2084,9 @@ function dispatch(raw){
     case "status":return agStatus(c);
     case "agenda":return agAgenda(c);
     case "treino":return agTreino(c);
+    case "comprovar":return agComprovar(c);
     case "tarefa":return agTarefa(c);
-    default:return {reply:"Não entendi bem 🐦‍⬛. Eu posso:\n• criar missões — “inclua a missão escovar os dentes às 20h”\n• agendar — “marque terapia quinta 14h”\n• concluir — “considere a meta do dia realizada”\n• registrar treino — “corri 20 minutos”\n• registrar água — “bebi 2 copos de água”\n• poupar — “guardar 10 reais no tesouro”\n• ver progresso — “como estou?”"};
+    default:return {reply:"Não entendi bem 🐦‍⬛. Eu posso:\n• criar missões — “inclua a missão escovar os dentes às 20h”\n• agendar — “marque terapia quinta 14h”\n• concluir — “considere a meta do dia realizada”\n• registrar treino — “corri 20 minutos”\n• enviar comprovação — “quero mandar uma foto pros meus pais”\n• registrar água — “bebi 2 copos de água”\n• ver progresso — “como estou?”"};
   }
 }
 /* --- voz --- */
@@ -1864,6 +2147,8 @@ load();migrate();
 if(!S.config.tema)S.config.tema=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
 applyTheme();drawMon();renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();
 initAssistant();
+$("#linnFloat").onclick=()=>{go("hoje");scrollTo({top:0,behavior:"smooth"});};
+updateLinnFloat(linnMood());
 setInterval(checkReminders,30000);
 window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();} });
 try{ if(!sessionStorage.getItem("kiz_greeted")){ sessionStorage.setItem("kiz_greeted","1"); setTimeout(()=>openAssist(true),650); } }catch(e){}
