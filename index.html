@@ -134,6 +134,36 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
   background:var(--night);font-size:12px;font-weight:800;cursor:pointer;color:var(--ink-2)}
 .dchip.on{background:var(--ember);border-color:var(--ember);color:#fff}
 
+/* INTRODUÇÃO ANIMADA */
+.intro{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:18px;
+  background:radial-gradient(1000px 600px at 50% -10%,rgba(243,195,32,.28),transparent 60%),var(--night)}
+.intro.open{display:flex}
+.intro-card{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--line);border-radius:26px;
+  box-shadow:var(--shadow);padding:22px 20px calc(18px + var(--safe-b));position:relative;min-height:60vh;display:flex;flex-direction:column}
+.intro-skip{position:absolute;top:12px;right:14px;border:none;background:var(--surface-2);color:var(--ink-3);
+  font-size:12px;font-weight:800;padding:6px 11px;border-radius:999px;cursor:pointer;z-index:2}
+.intro-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:16px 4px}
+.intro-stage.in>*{animation:introPop .5s cubic-bezier(.2,1,.3,1) both}
+.intro-stage.in>*:nth-child(2){animation-delay:.08s}
+.intro-stage.in>*:nth-child(3){animation-delay:.16s}
+@keyframes introPop{from{opacity:0;transform:translateY(18px) scale(.92)}to{opacity:1;transform:none}}
+.intro-ic{width:120px;height:120px;border-radius:34px;display:grid;place-items:center;font-size:62px;animation:introBob 1.8s ease-in-out infinite}
+@keyframes introBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-9px) rotate(2deg)}}
+.intro-face{width:132px;height:132px}
+.intro-face svg,.intro-face img{width:100%;height:100%}
+.intro-t{font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.intro-x{font-size:15px;font-weight:600;color:var(--ink-2);line-height:1.45;max-width:340px}
+.intro-eyebrow{font-size:12.5px;font-weight:800;color:var(--ember);letter-spacing:.04em}
+.intro-ranks{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;font-size:26px}
+.intro-ranks span{animation:introPop .4s both}
+.intro-moods{display:flex;gap:6px;justify-content:center}
+.intro-moods .mf{width:46px;height:46px;border-radius:50%;overflow:hidden;border:1px solid var(--line)}
+.intro-moods .mf svg{width:100%;height:100%}
+.intro-dots{display:flex;gap:6px;justify-content:center;padding:8px 0}
+.intro-dots i{width:7px;height:7px;border-radius:50%;background:var(--line-strong);transition:.2s}
+.intro-dots i.on{background:var(--ember);width:20px;border-radius:999px}
+.intro-nav{display:flex;gap:10px}
+
 /* JORNADA DE RECOMPENSAS */
 .premios{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none}
 .premios::-webkit-scrollbar{display:none}
@@ -172,17 +202,20 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .cp-ok{background:rgba(124,179,66,.22);color:#3f6a18}
 .cp-no{background:rgba(210,59,46,.18);color:#a12a20}
 
-/* AVATAR FLUTUANTE */
-.linn-float{position:fixed;left:16px;bottom:calc(86px + var(--safe-b));z-index:45;width:66px;height:66px;border-radius:50%;
-  border:3px solid var(--night-2);cursor:pointer;background:var(--surface);box-shadow:0 10px 24px rgba(0,0,0,.3);
-  display:grid;place-items:center;padding:0;overflow:visible}
-.linn-float:active{transform:scale(.93)}
-.linn-float.pop{animation:linnpop .55s cubic-bezier(.2,1.4,.4,1)}
-.lf-stage{width:100%;height:100%;border-radius:50%;overflow:hidden;display:grid;place-items:center}
-.lf-stage svg,.lf-stage img{width:100%;height:100%;object-fit:cover}
-.lf-pct{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);background:var(--ember);color:#fff;
-  font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;box-shadow:var(--shadow-sm)}
-@media(min-width:521px){.linn-float{left:calc(50% - 260px + 16px)}}
+/* AVATAR FIXO NO TOPO (aparece ao rolar) */
+.linn-top{position:fixed;top:0;left:0;right:0;z-index:46;max-width:520px;margin:0 auto;
+  display:flex;align-items:center;gap:11px;padding:8px 16px calc(8px + env(safe-area-inset-top,0px));
+  background:color-mix(in srgb,var(--night) 86%,transparent);backdrop-filter:saturate(160%) blur(14px);
+  -webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line);
+  transform:translateY(-120%);transition:transform .28s cubic-bezier(.2,.9,.3,1);pointer-events:none}
+.linn-top.show{transform:translateY(0);pointer-events:auto;cursor:pointer}
+.lt-stage{width:40px;height:40px;border-radius:50%;overflow:hidden;flex:none;border:2px solid var(--line-strong);background:var(--surface)}
+.lt-stage svg,.lt-stage img{width:100%;height:100%;object-fit:cover}
+.lt-stage.pop{animation:linnpop .55s cubic-bezier(.2,1.4,.4,1)}
+.lt-info{flex:1;line-height:1.1}
+.lt-info b{font-size:14px;font-weight:800;display:block}
+.lt-info small{font-size:11px;color:var(--ink-3);font-weight:700}
+.lt-pct{font-size:12px;font-weight:800;color:#fff;background:var(--ember);padding:3px 10px;border-radius:999px}
 
 /* LINHA DO TEMPO */
 .tl{position:relative;margin-top:4px}
@@ -197,6 +230,9 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .tl-dot{position:absolute;top:15px;width:14px;height:14px;border-radius:50%;background:var(--surface);
   border:2.5px solid var(--ink-3);z-index:1}
 .tl-item.done .tl-dot{background:var(--leaf);border-color:var(--leaf)}
+.tl-item.pend .tl-dot{background:var(--thunder);border-color:var(--thunder)}
+.tl-item.pend .chk{border-color:var(--thunder);color:var(--thunder);background:rgba(243,195,32,.15)}
+.row.pend .check{border-color:var(--thunder);color:var(--thunder);background:rgba(243,195,32,.15)}
 .tl-item.now .tl-dot{border-color:var(--ember);box-shadow:0 0 0 4px rgba(242,116,60,.18)}
 .tl-card{flex:1;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
   padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;min-height:52px;position:relative;overflow:hidden}
@@ -416,7 +452,10 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
       <svg class="mon" viewBox="0 0 40 40" fill="none" id="monSvg" aria-hidden="true"></svg>
       <div><h1>Kizuna</h1><small id="brandSub">O Pomar do Linn</small></div>
     </div>
-    <button class="iconbtn" id="themeBtn" title="Tema" aria-label="Alternar tema">☀</button>
+    <div style="display:flex;gap:8px">
+      <button class="iconbtn" id="helpBtn" title="Ver introdução" aria-label="Ver introdução">?</button>
+      <button class="iconbtn" id="themeBtn" title="Tema" aria-label="Alternar tema">☀</button>
+    </div>
   </header>
 
   <!-- HOJE -->
@@ -558,6 +597,19 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
   </div>
 </nav>
 
+<!-- Introdução animada -->
+<div class="intro" id="intro">
+  <div class="intro-card">
+    <button class="intro-skip" id="introSkip">pular ✕</button>
+    <div class="intro-stage" id="introStage"></div>
+    <div class="intro-dots" id="introDots"></div>
+    <div class="intro-nav">
+      <button class="btn ghost" id="introPrev" style="flex:1">Voltar</button>
+      <button class="btn primary" id="introNext" style="flex:2">Avançar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Game overlay -->
 <div class="overlay" id="gameOverlay">
   <div class="ov-head">
@@ -570,11 +622,12 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
 <!-- Sheet (edições) -->
 <div class="sheet" id="sheet"><div class="panel" id="sheetPanel"></div></div>
 
+<div class="linn-top" id="linnTop" aria-hidden="true">
+  <div class="lt-stage" id="linnTopStage"></div>
+  <div class="lt-info"><b id="linnTopRank">Semente</b><small id="linnTopMood">Com sono</small></div>
+  <div class="lt-pct" id="linnTopPct">0%</div>
+</div>
 <button class="fab" id="assistFab" aria-label="Falar com o KizAI"><span class="ping"></span>🐦‍⬛</button>
-<button class="linn-float" id="linnFloat" aria-label="Humor do Linn" style="display:none">
-  <div class="lf-stage" id="linnFloatStage"></div>
-  <span class="lf-pct" id="linnFloatPct">0%</span>
-</button>
 <div class="assist" id="assist">
   <div class="panel">
     <div class="ahead">
@@ -701,9 +754,18 @@ const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 function todayKey(d=new Date()){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function yesterdayKey(){const d=new Date();d.setDate(d.getDate()-1);return todayKey(d);}
 function rankIndex(xp){let i=0;for(let k=0;k<RANK_XP.length;k++){if(xp>=RANK_XP[k])i=k;}return i;}
-function totalDone(s){let n=0;Object.values(s.completions).forEach(day=>{n+=Object.values(day).filter(Boolean).length;});return n;}
+function totalDone(s){let n=0;Object.values(s.completions).forEach(day=>{Object.values(day).forEach(v=>{
+  const ok = (typeof v==="object")?(v.st==="ok"):!!v; if(ok)n++;});});return n;}
 function coinsFor(xp){return Math.max(2,Math.round(xp/5));}
-function isDone(id){const d=S.completions[todayKey()];return !!(d&&d[id]);}
+/* Estado de conclusão: 'none' | 'pend' (aguardando guardião) | 'ok' (aprovado) */
+function compRaw(id,dk){const d=S.completions[dk];return d?d[id]:undefined;}
+function taskState(id,dk){const v=compRaw(id,dk); if(v==null)return "none";
+  if(typeof v==="object")return v.st||"ok"; return "ok"; /* legado number/true */ }
+function approvedPts(id,dk){const v=compRaw(id,dk);
+  if(typeof v==="object")return typeof v.pts==="number"?v.pts:0; if(typeof v==="number")return v; return 0;}
+function isApproved(id,dk){return taskState(id,dk)==="ok";}
+function isDone(id){return isApproved(id,todayKey());}
+function approvedCount(dk){const d=S.completions[dk]||{};return Object.keys(d).filter(id=>taskState(id,dk)==="ok").length;}
 
 /* ---------- Pontos por dia (redistribuição mantendo a meta do dia) ---------- */
 function metaDia(){return Math.max(1,(S.config&&S.config.metaDia)||100);}
@@ -755,37 +817,54 @@ function checkMedals(){
 }
 
 /* ---------- Combo (reforço progressivo) ---------- */
-function comboTier(){ // nº de missões já concluídas hoje = nível do combo da próxima
-  const tk=todayKey();return Object.values(S.completions[tk]||{}).filter(Boolean).length;
-}
+function comboTier(){ return approvedCount(todayKey()); }
 function comboMult(tier){return Math.min(1.5, 1 + tier*0.1);}
 
-/* ---------- Toggle de missão ---------- */
+/* ---------- Toque na missão (criança) → envia para aprovação do guardião ---------- */
 function toggleTask(t,rowEl){
   const tk=todayKey();
   S.completions[tk]=S.completions[tk]||{};
-  const was=!!S.completions[tk][t.id];
-  if(!was){
-    const tier=comboTier();
-    const mult=comboMult(tier);
-    const base=ptsFor(t,weekdayOf(tk));
-    const ganho=Math.round(base*mult);
-    S.completions[tk][t.id]=ganho;               // guarda os pontos concedidos (p/ desfazer exato)
-    S.profile.xp+=ganho; S.profile.moedas+=coinsFor(ganho);
-    bumpStreakOnDone();
+  const st=taskState(t.id,tk);
+  if(st==="none"){
+    S.completions[tk][t.id]={st:"pend",ts:Date.now()};
     if(rowEl){const sl=document.createElement("div");sl.className="slash go";rowEl.appendChild(sl);
       setTimeout(()=>sl.remove(),520);}
-    const comboTxt=mult>1?` (combo x${mult.toFixed(1)})`:"";
-    toast("+"+ganho+" XP"+comboTxt);
-    linnReact(tier+1);
-    checkMedals();
-  }else{
-    const ganho=typeof S.completions[tk][t.id]==="number"?S.completions[tk][t.id]:ptsFor(t,weekdayOf(tk));
+    toast("Enviado para o guardião confirmar ⏳");
+    save(); renderToday();
+  }else if(st==="pend"){
     delete S.completions[tk][t.id];
-    S.profile.xp=Math.max(0,S.profile.xp-ganho);
-    S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(ganho));
+    save(); renderToday();
+  }else{ // já aprovada
+    toast("Já confirmada pelo guardião ✓");
   }
-  save(); renderHero(); renderToday();
+}
+
+/* ---------- Aprovação pelo guardião ---------- */
+function aprovarTarefa(dk,id,aprovar){
+  const t=S.rotina.find(x=>x.id===id);
+  S.completions[dk]=S.completions[dk]||{};
+  if(aprovar){
+    const wd=weekdayOf(dk);
+    const tier=comboTier();const base=t?ptsFor(t,wd):0;const ganho=Math.round(base*comboMult(tier));
+    S.completions[dk][id]={st:"ok",pts:ganho};
+    S.profile.xp+=ganho; S.profile.moedas+=coinsFor(ganho);
+    if(dk===todayKey()){bumpStreakOnDone();linnReact(tier+1);}
+    S.comprovacoes.filter(c=>c.taskId===id&&c.data===dk&&c.status==="pendente").forEach(c=>c.status="aprovada");
+    checkMedals();save();renderHero();renderToday();renderPais();
+    toast("Tarefa confirmada · +"+ganho+" XP ✓");
+  }else{
+    delete S.completions[dk][id];
+    S.comprovacoes.filter(c=>c.taskId===id&&c.data===dk&&c.status==="pendente").forEach(c=>c.status="recusada");
+    save();renderHero();renderToday();renderPais();toast("Tarefa recusada");
+  }
+}
+function tarefasPendentes(){
+  const out=[];
+  Object.keys(S.completions||{}).forEach(dk=>{const day=S.completions[dk];
+    Object.keys(day).forEach(id=>{ if(taskState(id,dk)==="pend"){ const t=S.rotina.find(x=>x.id===id);
+      out.push({dk,id,titulo:t?t.titulo:"(missão removida)",dom:t?t.dom:"metas",
+        ts:(typeof day[id]==="object"&&day[id].ts)?day[id].ts:0}); }});});
+  return out.sort((a,b)=>b.ts-a.ts);
 }
 
 /* ---------- Linn: companheiro reativo ---------- */
@@ -804,7 +883,7 @@ const MOODS=[
 function moodIndex(){
   const tk=todayKey();const wd=weekdayOf(tk);
   const total=Math.max(1,S.rotina.filter(t=>taskOnDay(t,wd)).length);
-  const feitas=Object.values(S.completions[tk]||{}).filter(Boolean).length;
+  const feitas=approvedCount(tk);
   const r=feitas/total;
   if(feitas===0)return 0;
   if(r>=1)return 9;
@@ -825,7 +904,7 @@ function linnReact(combo){
   const b=$("#linnBubble");if(b){b.textContent=txt;b.classList.add("show");clearTimeout(linnReact._t);
     linnReact._t=setTimeout(()=>b.classList.remove("show"),1900);}
   drawLinn(linnMood());
-  const fl=$("#linnFloat");if(fl&&S.config.avatarFlutuante){fl.classList.remove("pop");void fl.offsetWidth;fl.classList.add("pop");}
+  const lt=$("#linnTopStage");if(lt){lt.classList.remove("pop");void lt.offsetWidth;lt.classList.add("pop");}
 }
 
 /* ---------- Render: HERO ---------- */
@@ -855,10 +934,10 @@ const LINN_IMG = { sono:"",chateado:"",raiva:"",serio:"",ok:"",tranquilo:"",bem:
 function linnSrc(mood){ return (S.linn && S.linn[mood]) || LINN_IMG[mood] || ""; }
 
 /* Linn: imagem (se houver) ou desenho SVG original de fallback (10 humores) */
-function drawLinn(mood){
-  const stage=$("#linnStage");if(!stage)return;
+function drawLinn(mood,el){
+  const stage=el||$("#linnStage");if(!stage)return;
   const src=linnSrc(mood);
-  if(src){ stage.innerHTML=`<img class="linn-img" src="${src}" alt="Linn" draggable="false">`; return; }
+  if(src){ stage.innerHTML=`<img class="linn-img" src="${src}" alt="Linn" draggable="false">`; if(!el)updateLinnTop(mood); return; }
   function dots(){return `<ellipse cx="38" cy="50" rx="4" ry="5" fill="#c9352a"/><ellipse cx="62" cy="50" rx="4" ry="5" fill="#c9352a"/><circle cx="39.5" cy="48.5" r="1.4" fill="#fff"/><circle cx="63.5" cy="48.5" r="1.4" fill="#fff"/>`;}
   function happyEyes(){return `<path d="M32 51 q6 -7 12 0" stroke="#5a3a1a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M56 51 q6 -7 12 0" stroke="#5a3a1a" stroke-width="3" fill="none" stroke-linecap="round"/>`;}
   function sleepyEyes(){return `<path d="M34 50 q5 4 10 0" stroke="#5a3a1a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M56 50 q5 4 10 0" stroke="#5a3a1a" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;}
@@ -899,20 +978,27 @@ function drawLinn(mood){
       ${E.boca}
       ${E.extra}
     </g></svg>`;
-  updateLinnFloat(mood);
+  if(!el)updateLinnTop(mood);
 }
-/* Avatar flutuante: espelha o humor e fica sempre visível (opcional) */
-function updateLinnFloat(mood){
-  const fl=$("#linnFloat"), st=$("#linnFloatStage");if(!fl||!st)return;
-  const on=!!(S.config&&S.config.avatarFlutuante);
-  fl.style.display=on?"grid":"none";
-  if(!on)return;
-  const stg=$("#linnStage");
-  if(stg)st.innerHTML=stg.innerHTML; // reaproveita o rosto já desenhado
+/* Avatar fixo no topo: espelha o rosto/humor e aparece ao rolar a tela Hoje */
+function updateLinnTop(mood){
+  const st=$("#linnTopStage"), stg=$("#linnStage");if(!st||!stg)return;
+  st.innerHTML=stg.innerHTML;
   const xp=S.profile.xp, ri=rankIndex(xp);
   const base=RANK_XP[ri], next=RANK_XP[Math.min(ri+1,RANK_XP.length-1)];
   const span=Math.max(1,next-base), prog=ri>=RANKS.length-1?1:Math.min(1,(xp-base)/span);
-  const pc=$("#linnFloatPct");if(pc)pc.textContent=Math.round(prog*100)+"%";
+  const pc=$("#linnTopPct");if(pc)pc.textContent=Math.round(prog*100)+"%";
+  const rk=$("#linnTopRank");if(rk)rk.textContent=RANKS[ri];
+  const md=$("#linnTopMood");if(md){const m=MOODS.find(x=>x.k===(mood||linnMood()));md.textContent=m?m.lb.replace(" (dia 100%)",""):"";}
+  checkLinnTop();
+}
+function checkLinnTop(){
+  const bar=$("#linnTop");if(!bar)return;
+  const on=!!(S.config&&S.config.avatarFixoTopo);
+  const hojeAtiva=$("#scr-hoje")&&$("#scr-hoje").classList.contains("active");
+  const hero=$("#scr-hoje .hero");
+  const passou=hero?(hero.getBoundingClientRect().bottom<6):false;
+  bar.classList.toggle("show", on&&hojeAtiva&&passou);
 }
 /* Lê uma imagem, recorta/reduz para 256px e guarda como data URI no aparelho */
 function processLinnImage(file,cb){
@@ -946,7 +1032,7 @@ function renderReminder(){
   const tk=todayKey();const wd=weekdayOf(tk);
   const comHora=[], semHora=[];
   S.rotina.forEach(t=>{
-    if(!taskOnDay(t,wd)||isDoneOn(t.id,tk))return;
+    if(!taskOnDay(t,wd)||taskState(t.id,tk)!=="none")return;
     const ini=tStart(t);
     if(ini){comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:ini,min:hm2min(ini),tag:"Próxima tarefa"});}
     else semHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:"",tag:"Próxima tarefa"});
@@ -1058,20 +1144,20 @@ function renderToday(){
 
   const tl=document.createElement("div");tl.className="tl";
   comH.forEach(t=>{
-    const done=isDoneOn(t.id,dk);const r=RESP[t.dom];
+    const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=RESP[t.dom];
     const ini=tStart(t), fim=tEnd(t);
-    const emAndamento = hoje && hm2min(ini)!=null && nowMin>=hm2min(ini) && (fim? nowMin<hm2min(fim): nowMin<hm2min(ini)+60) && !done;
-    const it=document.createElement("div");it.className="tl-item"+(done?" done":"")+(emAndamento?" now":"");
+    const emAndamento = hoje && hm2min(ini)!=null && nowMin>=hm2min(ini) && (fim? nowMin<hm2min(fim): nowMin<hm2min(ini)+60) && st==="none";
+    const it=document.createElement("div");it.className="tl-item"+(done?" done":"")+(pend?" pend":"")+(emAndamento?" now":"");
     if(!hoje)it.style.opacity=".82";
     it.innerHTML=`<div class="tl-time"><b>${ini}</b>${fim?`<small>${fim}</small>`:""}</div>
       <div class="tl-rail"><span class="tl-dot"></span></div>
       <div class="tl-card">
         ${emAndamento?`<span class="now-badge">AGORA</span>`:""}
         <div class="tci" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
-        <div class="tct"><div class="ti2">${escapeHtml(t.titulo)}</div><div class="sb">${r.sub}</div></div>
+        <div class="tct"><div class="ti2">${escapeHtml(t.titulo)}</div><div class="sb">${pend?"aguardando confirmação ⏳":r.sub}</div></div>
         <span class="pts2">+${mp[t.id]||0}</span>
         ${hoje?`<button class="tl-cam" title="Enviar comprovação">📎</button>`:""}
-        <div class="chk">${done?"✓":""}</div>
+        <div class="chk">${done?"✓":pend?"⏳":""}</div>
       </div>`;
     const card=it.querySelector(".tl-card");
     card.onclick=(e)=>{ if(e.target.closest(".tl-cam"))return;
@@ -1086,12 +1172,12 @@ function renderToday(){
     sub.textContent="Sem horário definido";box.appendChild(sub);
     const grp=document.createElement("div");grp.className="group";
     semH.forEach(t=>{
-      const done=isDoneOn(t.id,dk);const r=RESP[t.dom];
-      const row=document.createElement("div");row.className="row"+(done?" done":"");
+      const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=RESP[t.dom];
+      const row=document.createElement("div");row.className="row"+(done?" done":"")+(pend?" pend":"");
       if(!hoje)row.style.opacity=".82";
-      row.innerHTML=`<div class="check">${done?"✓":""}</div>
+      row.innerHTML=`<div class="check">${done?"✓":pend?"⏳":""}</div>
         <div style="width:26px;text-align:center">${r.icon}</div>
-        <div class="txt">${escapeHtml(t.titulo)}</div>
+        <div class="txt">${escapeHtml(t.titulo)}${pend?` <span class="muted" style="font-size:11px;font-weight:700">· aguardando</span>`:""}</div>
         <span class="xpwin">+${mp[t.id]||0}</span>
         ${hoje?`<button class="tl-cam" title="Enviar comprovação">📎</button>`:""}`;
       row.onclick=(e)=>{ if(e.target.closest(".tl-cam"))return;
@@ -1155,7 +1241,10 @@ function sheetComprovar(task){
     idbPut(id,file).then(()=>{
       S.comprovacoes.push({id:Math.random().toString(36).slice(2,9),taskId:task?task.id:null,titulo,
         tipo,mediaId:id,nota:$("#cpNota").value.trim(),data:todayKey(),ts:Date.now(),status:"pendente"});
-      save();closeSheet();toast("Comprovação enviada aos pais 📨");confetti();
+      // vincula: se for de uma tarefa ainda não marcada, deixa pendente de aprovação
+      if(task){const tk=todayKey();S.completions[tk]=S.completions[tk]||{};
+        if(taskState(task.id,tk)==="none")S.completions[tk][task.id]={st:"pend",ts:Date.now()};}
+      save();closeSheet();renderToday();toast("Comprovação enviada aos pais 📨");confetti();
     }).catch(()=>toast("Não consegui salvar a mídia neste aparelho"));
   };
 }
@@ -1163,9 +1252,10 @@ function sheetComprovar(task){
 /* Revisão pelos pais (Guardião) */
 function renderComprov(){
   const box=$("#paisComprov");if(!box)return;box.innerHTML="";
-  const pend=S.comprovacoes.filter(c=>c.status==="pendente").sort((a,b)=>b.ts-a.ts);
-  const outras=S.comprovacoes.filter(c=>c.status!=="pendente").sort((a,b)=>b.ts-a.ts).slice(0,10);
-  if(!S.comprovacoes.length){box.innerHTML=`<div class="empty">Nenhuma comprovação enviada ainda.</div>`;return;}
+  const lista=S.comprovacoes.filter(c=>!c.taskId); // mídia da "meta do dia"; as de tarefa aparecem na fila de tarefas
+  const pend=lista.filter(c=>c.status==="pendente").sort((a,b)=>b.ts-a.ts);
+  const outras=lista.filter(c=>c.status!=="pendente").sort((a,b)=>b.ts-a.ts).slice(0,10);
+  if(!lista.length){box.innerHTML=`<div class="empty">Nenhuma comprovação do dia enviada. As fotos de cada tarefa aparecem em “Tarefas a confirmar”.</div>`;return;}
   const render=c=>{
     const card=document.createElement("div");card.className="cp-card";
     const dt=new Date(c.ts);const when=`${pad2(dt.getDate())}/${pad2(dt.getMonth()+1)} ${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
@@ -1191,7 +1281,62 @@ function renderComprov(){
   if(pend.length){const h=document.createElement("div");h.className="plan-note";h.textContent="A revisar:";box.appendChild(h);pend.forEach(render);}
   if(outras.length){const h=document.createElement("div");h.className="plan-note";h.style.marginTop="10px";h.textContent="Histórico:";box.appendChild(h);outras.forEach(render);}
 }
-function comprovPendentes(){return S.comprovacoes.filter(c=>c.status==="pendente").length;}
+function comprovPendentes(){return S.comprovacoes.filter(c=>c.status==="pendente"&&!c.taskId).length;}
+
+/* Fila de tarefas que a criança marcou, aguardando confirmação do guardião */
+function aprovarLote(aprovar,somenteHoje){
+  const tk=todayKey();
+  let list=tarefasPendentes(); if(somenteHoje)list=list.filter(p=>p.dk===tk);
+  if(!list.length){toast("Nada para confirmar");return;}
+  if(!confirm((aprovar?"Confirmar":"Recusar")+" "+list.length+" tarefa(s)?"))return;
+  let total=0,n=0;
+  list.forEach(p=>{const t=S.rotina.find(x=>x.id===p.id);S.completions[p.dk]=S.completions[p.dk]||{};
+    if(aprovar){const wd=weekdayOf(p.dk);const base=t?ptsFor(t,wd):0;const g=Math.round(base*comboMult(approvedCount(p.dk)));
+      S.completions[p.dk][p.id]={st:"ok",pts:g};S.profile.xp+=g;S.profile.moedas+=coinsFor(g);total+=g;n++;
+      S.comprovacoes.filter(c=>c.taskId===p.id&&c.data===p.dk&&c.status==="pendente").forEach(c=>c.status="aprovada");}
+    else{delete S.completions[p.dk][p.id];
+      S.comprovacoes.filter(c=>c.taskId===p.id&&c.data===p.dk&&c.status==="pendente").forEach(c=>c.status="recusada");}
+  });
+  if(aprovar){bumpStreakOnDone();checkMedals();}
+  save();renderHero();renderToday();renderPais();
+  if(aprovar){toast("Confirmadas "+n+" · +"+total+" XP ✓");confetti();}else toast("Tarefas recusadas");
+}
+function renderTarefasPend(){
+  const box=$("#paisTarefas");if(!box)return;box.innerHTML="";
+  const pend=tarefasPendentes();
+  if(!pend.length){box.innerHTML=`<div class="empty">Nenhuma tarefa aguardando confirmação.</div>`;return;}
+  const tk=todayKey();const nHoje=pend.filter(p=>p.dk===tk).length;
+  if(pend.length>1){
+    const bar=document.createElement("div");bar.style.cssText="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 4px";
+    bar.innerHTML=`<button class="btn primary" id="loteHoje" style="flex:1;min-width:150px">✓ Confirmar todas de hoje${nHoje?` (${nHoje})`:""}</button>
+      ${pend.length>nHoje?`<button class="btn ghost" id="loteTudo" style="flex:1;min-width:120px">Confirmar todas (${pend.length})</button>`:""}
+      <button class="btn ghost" id="loteNao" style="flex:1;min-width:110px;color:var(--ember)">Recusar todas</button>`;
+    box.appendChild(bar);
+    $("#loteHoje").onclick=()=>aprovarLote(true,true);
+    const lt=$("#loteTudo");if(lt)lt.onclick=()=>aprovarLote(true,false);
+    $("#loteNao").onclick=()=>aprovarLote(false,false);
+  }
+  pend.forEach(p=>{
+    const L=dateLabel(p.dk);const r=RESP[p.dom]||RESP.metas;
+    const media=S.comprovacoes.filter(c=>c.taskId===p.id&&c.data===p.dk&&c.status==="pendente");
+    const card=document.createElement("div");card.className="cp-card";
+    card.innerHTML=`<div class="cp-h">${r.icon} ${escapeHtml(p.titulo)}</div>
+      <div class="cp-when">${L.big} (${L.small}) · a criança marcou como feita</div>
+      ${media.length?`<div class="media-prev" data-m="${media[0].mediaId}" data-t="${media[0].tipo}" style="margin-top:8px">carregando…</div>`:
+        `<div class="muted" style="font-size:11.5px;font-weight:600;margin-top:6px">Sem foto/vídeo anexado.</div>`}
+      <div class="cp-actions">
+        <button class="btn primary tOk" style="flex:1">Confirmar ✓</button>
+        <button class="btn ghost tNo" style="flex:1;color:var(--ember)">Recusar</button></div>`;
+    if(media.length){const slot=card.querySelector(".media-prev");
+      idbGet(media[0].mediaId).then(rec=>{ if(!rec||!rec.blob){slot.innerHTML=`<div class="empty" style="padding:10px">Mídia não encontrada.</div>`;return;}
+        const url=URL.createObjectURL(rec.blob);const tp=media[0].tipo;
+        slot.innerHTML= tp==="foto"?`<img src="${url}">`:tp==="video"?`<video src="${url}" controls playsinline></video>`:`<audio src="${url}" controls></audio>`;
+      }).catch(()=>{slot.innerHTML="";});}
+    card.querySelector(".tOk").onclick=()=>aprovarTarefa(p.dk,p.id,true);
+    card.querySelector(".tNo").onclick=()=>aprovarTarefa(p.dk,p.id,false);
+    box.appendChild(card);
+  });
+}
 
 /* Validação de resgates (Guardião) */
 function renderResgates(){
@@ -1432,8 +1577,12 @@ function bindPin(){
 function renderPais(){
   const p=$("#paisPanel");
   const nPend=comprovPendentes();
+  const nTar=tarefasPendentes().length;
   p.innerHTML=`
-   <div class="section-title" style="margin-top:16px">Comprovações${nPend?` · <span style="color:var(--ember)">${nPend} a revisar</span>`:""}</div>
+   <div class="section-title" style="margin-top:16px">Tarefas a confirmar${nTar?` · <span style="color:var(--ember)">${nTar}</span>`:""}</div>
+   <div class="card" style="padding:6px 16px" id="paisTarefas"></div>
+
+   <div class="section-title">Comprovações do dia${nPend?` · <span style="color:var(--ember)">${nPend} a revisar</span>`:""}</div>
    <div class="card" style="padding:12px 16px" id="paisComprov"></div>
 
    <div class="section-title">Resgates${resgatesPendentes()?` · <span style="color:var(--ember)">${resgatesPendentes()} a validar</span>`:""}</div>
@@ -1489,8 +1638,8 @@ function renderPais(){
      <label class="fld">Meta diária de copos de água</label><input id="cHydro" type="number" value="${S.config.hidratacaoMeta}">
      <label class="fld">PIN do guardião (4 dígitos)</label><input id="cPin" inputmode="numeric" maxlength="4" value="${S.config.pin}">
      <label class="switch" style="display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer">
-       <input type="checkbox" id="cFloat" ${S.config.avatarFlutuante?"checked":""} style="width:auto">
-       <span style="font-weight:700;font-size:14px">Avatar flutuante do Linn<br><span class="muted" style="font-size:11px;font-weight:600">o rostinho fica sempre visível na tela</span></span>
+       <input type="checkbox" id="cFloat" ${S.config.avatarFixoTopo?"checked":""} style="width:auto">
+       <span style="font-weight:700;font-size:14px">Fixar o Linn no topo ao rolar<br><span class="muted" style="font-size:11px;font-weight:600">o rostinho acompanha a tela e some quando o avatar grande está visível</span></span>
      </label>
      <button class="btn primary" id="saveCfg" style="margin-top:14px">Salvar ajustes</button>
      <div style="display:flex;gap:9px;margin-top:12px">
@@ -1498,6 +1647,7 @@ function renderPais(){
        <button class="btn ghost" id="impBtn" style="width:auto;flex:1">Importar</button>
      </div>
      <button class="btn ghost" id="notifBtn" style="margin-top:9px">🔔 Ativar lembretes</button>
+     <button class="btn ghost" id="introBtn" style="margin-top:9px">🎬 Ver introdução das trilhas</button>
      <button class="btn" id="resetBtn" style="margin-top:9px;color:var(--ember)">Apagar tudo e recomeçar</button>
    </div>
    <input type="file" id="impFile" accept="application/json" style="display:none">
@@ -1525,6 +1675,7 @@ function renderPais(){
     rot.appendChild(g);
   });
   renderPaisDia();
+  renderTarefasPend();
   renderComprov();
   renderResgates();
 
@@ -1598,13 +1749,14 @@ function renderPais(){
     S.poupanca.meta=Math.max(0,parseFloat($("#pMeta").value)||0);save();renderTesouro();toast("Poupança salva");};
   $("#saveCfg").onclick=()=>{S.profile.nome=$("#cName").value||"Linn";
     S.config.hidratacaoMeta=Math.max(1,Math.min(12,parseInt($("#cHydro").value)||6));
-    S.config.avatarFlutuante=$("#cFloat").checked;
+    S.config.avatarFixoTopo=$("#cFloat").checked;
     const np=$("#cPin").value.replace(/\D/g,"");if(np.length===4)S.config.pin=np;
-    save();renderHero();renderHydro();updateLinnFloat(linnMood());toast("Ajustes salvos");};
+    save();renderHero();renderHydro();updateLinnTop(linnMood());toast("Ajustes salvos");};
   $("#expBtn").onclick=exportBackup;
   $("#impBtn").onclick=()=>$("#impFile").click();
   $("#impFile").onchange=importBackup;
   $("#notifBtn").onclick=askNotif;
+  $("#introBtn").onclick=()=>openIntro();
   $("#resetBtn").onclick=()=>{if(confirm("Apagar todos os dados e recomeçar do zero?")){S=seed();save();location.reload();}};
 }
 
@@ -1851,7 +2003,7 @@ function go(scr){
   if(scr==="dojo")renderDojo();
   if(scr==="tesouro")renderTesouro();
   if(scr==="pais"){$("#paisPanel").style.display="none";$("#paisLocked").style.display="block";bindPin();}
-  scrollTo(0,0);
+  scrollTo(0,0);checkLinnTop();
 }
 $$(".tab").forEach(t=>t.onclick=()=>go(t.dataset.scr));
 
@@ -1860,6 +2012,7 @@ function applyTheme(){document.documentElement.setAttribute("data-theme",S.confi
   $("#themeBtn").textContent=S.config.tema==="dark"?"☾":"☀";
   document.querySelector('meta[name=theme-color]').setAttribute("content",S.config.tema==="dark"?"#211a0e":"#fff7d9");}
 $("#themeBtn").onclick=()=>{S.config.tema=S.config.tema==="dark"?"light":"dark";save();applyTheme();};
+$("#helpBtn").onclick=()=>openIntro();
 
 /* ---------- Depósito poupança ---------- */
 $("#depositBtn").onclick=()=>{
@@ -1877,9 +2030,13 @@ function migrate(){
   if(typeof S.config.voz==="undefined")S.config.voz=true;
   if(typeof S.config.notif==="undefined")S.config.notif=false;
   if(typeof S.config.metaDia!=="number")S.config.metaDia=100;
-  if(typeof S.config.avatarFlutuante!=="boolean")S.config.avatarFlutuante=false;
+  if(typeof S.config.avatarFixoTopo!=="boolean")S.config.avatarFixoTopo=true;
   if(!S.comprovacoes)S.comprovacoes=[];
   if(!S.resgates)S.resgates=[];
+  if(typeof S.config.introVista!=="boolean")S.config.introVista=false;
+  // completions legadas (number/true) -> {st:'ok',pts}
+  Object.keys(S.completions||{}).forEach(dk=>{const day=S.completions[dk];Object.keys(day).forEach(id=>{
+    const v=day[id]; if(typeof v==="number")day[id]={st:"ok",pts:v}; else if(v===true)day[id]={st:"ok",pts:0}; });});
   // peso por missão (converte xp antigo em peso; default 15) e horario -> inicio
   (S.rotina||[]).forEach(t=>{ if(typeof t.peso!=="number"){t.peso=(typeof t.xp==="number"&&t.xp>0)?t.xp:15;}
     if(!t.inicio&&t.horario){t.inicio=t.horario;delete t.horario;} });
@@ -2023,21 +2180,17 @@ function agAgenda(c){
 }
 function agConcluir(c){
   const t=norm(c.raw);const tk=todayKey();const wd=weekdayOf(tk);S.completions[tk]=S.completions[tk]||{};
-  const mp=ptsMap(wd);
-  const undone=S.rotina.filter(x=>taskOnDay(x,wd)&&!S.completions[tk][x.id]);
+  const undone=S.rotina.filter(x=>taskOnDay(x,wd)&&taskState(x.id,tk)==="none");
   const explicitAll=/(meta do dia|tudo|todas|minhas missoes|missões do dia|do dia)/.test(t);
   let alvo=null;
   if(!explicitAll)alvo=undone.find(x=>{const kt=norm(x.titulo).split(" ").filter(w=>w.length>3);return kt.some(w=>t.includes(w));});
-  const feitos=[];let ganho=0;
-  const marcar=list=>list.forEach(x=>{if(!S.completions[tk][x.id]){const g=mp[x.id]||0;
-    S.completions[tk][x.id]=g; S.profile.xp+=g;S.profile.moedas+=coinsFor(g);ganho+=g;feitos.push(x.id);}});
-  marcar(alvo?[alvo]:undone);
-  if(!feitos.length)return {reply:"Tudo já estava concluído por aqui. Mandou bem! 🌸"};
-  bumpStreakOnDone();checkMedals();save();refreshAll();
+  const feitos=[];
+  (alvo?[alvo]:undone).forEach(x=>{S.completions[tk][x.id]={st:"pend",ts:Date.now()};feitos.push(x.id);});
+  if(!feitos.length)return {reply:"Tudo já foi marcado por aqui. Mandou bem! 🌸"};
+  save();refreshAll();
   const nome=alvo?`“${alvo.titulo}”`:`${feitos.length} missõe${feitos.length>1?"s":""}`;
-  return {reply:`Feito ✓ Marquei ${nome} como concluíd${feitos.length>1?"as":"a"}. +${ganho} XP! 🔥`,
-    undo:()=>{feitos.forEach(id=>{const g=typeof S.completions[tk][id]==="number"?S.completions[tk][id]:0;delete S.completions[tk][id];
-      S.profile.xp=Math.max(0,S.profile.xp-g);S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(g));});save();refreshAll();}};
+  return {reply:`Feito ✓ Enviei ${nome} para o papai/mamãe confirmar ⏳. Assim que aprovarem, você ganha os pontos!`,
+    undo:()=>{feitos.forEach(id=>{delete S.completions[tk][id];});save();refreshAll();}};
 }
 function agAgua(c){
   const tk=todayKey();const meta=S.config.hidratacaoMeta;const q=Math.max(1,Math.round(c.qtd||1));
@@ -2142,16 +2295,69 @@ function initAssistant(){
   $("#assist").addEventListener("click",e=>{if(e.target.id==="assist")closeAssist();});
 }
 
+/* ========== INTRODUÇÃO ANIMADA (trilhas + jornada) ========== */
+const TRILHA_TXT={
+  mochila:    "Como o vento que arruma as folhas, você deixa a mochila e os materiais prontos para a escola.",
+  estudos:    "A água corre todo dia: estudar e ler um pouquinho sempre deixa você mais esperta.",
+  esporte:    "A chama te dá energia! Mexer o corpo deixa você forte e animada.",
+  alimentacao:"Comer frutas e comida de verdade faz você crescer cheia de saúde.",
+  remedios:   "Firme como uma pedra: tomar o remédio sempre no horário certo.",
+  terapias:   "A névoa acalma. É um tempinho só seu para cuidar de você.",
+  metas:      "Num estalo de trovão, você faz o que combinou: arrumar o quarto e suas tarefinhas.",
+  memoria:    "No Dojô, sua memória desabrocha como uma flor com os joguinhos.",
+};
+function introSlides(){
+  const s=[];
+  s.push({kind:"face",mood:"feliz",eyebrow:"OLÁ!",titulo:"Bem-vinda ao Pomar do Linn!",txt:"Aqui suas tarefas viram missões. Cada missão cumprida faz você e o Linn crescerem juntos. Bora conhecer?"});
+  s.push({kind:"ranks",eyebrow:"SUA JORNADA",titulo:"Você cresce como uma plantinha",txt:"Começa como Semente e vai evoluindo a cada missão: Broto, Muda, Botão, Flor… até virar Mestre do Pomar!"});
+  DOM_ORDER.forEach(dom=>{const r=RESP[dom];
+    s.push({kind:"trilha",dom,eyebrow:"TRILHA "+r.nome.toUpperCase(),titulo:r.icon+" "+r.sub,txt:TRILHA_TXT[dom]||""});});
+  s.push({kind:"moods",eyebrow:"O LINN SENTE JUNTO",titulo:"Quanto mais você faz, mais feliz ele fica",txt:"De com soninho 😴 até muito feliz 🤩 — cumpra as missões do dia e veja o Linn mudar de humor!"});
+  s.push({kind:"face",mood:"radiante",eyebrow:"COMO FUNCIONA",titulo:"Toque, comprove e ganhe pontos",txt:"Terminou uma missão? Toque nela — pode mandar foto, vídeo ou áudio! O papai ou a mamãe confirma e aí seus pontos chegam. 🎉"});
+  return s;
+}
+let INTRO=[], introI=0;
+function openIntro(){ INTRO=introSlides(); introI=0; $("#intro").classList.add("open"); renderIntro(); }
+function closeIntro(){ $("#intro").classList.remove("open"); S.config.introVista=true; save(); }
+function renderIntro(){
+  const sl=INTRO[introI]; if(!sl)return;
+  const stage=$("#introStage"); stage.classList.remove("in"); void stage.offsetWidth;
+  let body="";
+  if(sl.kind==="face"){ body=`<div class="intro-face" id="introFace"></div>`; }
+  else if(sl.kind==="ranks"){ body=`<div class="intro-ranks">${RANK_BADGE.map((e,i)=>`<span style="animation-delay:${i*0.06}s">${e}</span>`).join("")}</div>`; }
+  else if(sl.kind==="trilha"){ const r=RESP[sl.dom];
+    body=`<div class="intro-ic" style="background:color-mix(in srgb,${r.cor} 20%,transparent)">${r.icon}</div>`; }
+  else if(sl.kind==="moods"){ body=`<div class="intro-moods" id="introMoods"></div>`; }
+  stage.innerHTML=`${body}
+    <div class="intro-eyebrow">${sl.eyebrow}</div>
+    <div class="intro-t">${sl.titulo}</div>
+    <div class="intro-x">${sl.txt}</div>`;
+  void stage.offsetWidth; stage.classList.add("in");
+  if(sl.kind==="face"){ drawLinn(sl.mood,$("#introFace")); }
+  if(sl.kind==="moods"){ const mb=$("#introMoods");["sono","serio","bem","feliz","radiante"].forEach(m=>{
+    const d=document.createElement("div");d.className="mf";drawLinn(m,d);mb.appendChild(d);}); }
+  const dots=$("#introDots");dots.innerHTML=INTRO.map((_,i)=>`<i class="${i===introI?"on":""}"></i>`).join("");
+  $("#introPrev").style.visibility=introI===0?"hidden":"visible";
+  $("#introNext").textContent = introI>=INTRO.length-1 ? "Começar! 🍋" : "Avançar";
+}
+function initIntro(){
+  $("#introNext").onclick=()=>{ if(introI>=INTRO.length-1){closeIntro();} else {introI++;renderIntro();} };
+  $("#introPrev").onclick=()=>{ if(introI>0){introI--;renderIntro();} };
+  $("#introSkip").onclick=closeIntro;
+}
+
 /* ---------- Init ---------- */
 load();migrate();
 if(!S.config.tema)S.config.tema=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
 applyTheme();drawMon();renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();
-initAssistant();
-$("#linnFloat").onclick=()=>{go("hoje");scrollTo({top:0,behavior:"smooth"});};
-updateLinnFloat(linnMood());
+initAssistant();initIntro();
+$("#linnTop").onclick=()=>{scrollTo({top:0,behavior:"smooth"});};
+window.addEventListener("scroll",checkLinnTop,{passive:true});
+updateLinnTop(linnMood());
 setInterval(checkReminders,30000);
 window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();} });
-try{ if(!sessionStorage.getItem("kiz_greeted")){ sessionStorage.setItem("kiz_greeted","1"); setTimeout(()=>openAssist(true),650); } }catch(e){}
+if(!S.config.introVista){ setTimeout(openIntro,400); }
+else { try{ if(!sessionStorage.getItem("kiz_greeted")){ sessionStorage.setItem("kiz_greeted","1"); setTimeout(()=>openAssist(true),650); } }catch(e){} }
 </script>
 </body>
 </html>
