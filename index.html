@@ -54,6 +54,9 @@ header.top{display:flex;align-items:center;justify-content:space-between;padding
 .iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);
   color:var(--ink);font-size:17px;display:grid;place-items:center;cursor:pointer}
 .iconbtn:active{transform:scale(.94)}
+.syncdot{font-size:14px;line-height:1;color:var(--ink-3);min-width:16px;text-align:center}
+.syncdot.on{color:var(--leaf)}
+.syncdot.off{color:var(--ink-3)}
 
 /* generic */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
@@ -133,6 +136,29 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .dchip{width:40px;text-align:center;padding:8px 0;border-radius:10px;border:1px solid var(--line-strong);
   background:var(--night);font-size:12px;font-weight:800;cursor:pointer;color:var(--ink-2)}
 .dchip.on{background:var(--ember);border-color:var(--ember);color:#fff}
+
+/* PROVAS */
+.provas-hoje{padding:14px 16px}
+.pv-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.pv-row:first-of-type{border-top:none}
+.pv-when{min-width:58px;text-align:center}
+.pv-when b{display:block;font-size:15px;font-weight:900;line-height:1}
+.pv-when small{font-size:10px;color:var(--ink-3);font-weight:700}
+.pv-cd{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pv-cd.soon{background:rgba(232,99,43,.16);color:var(--ember)}
+.pv-cd.ok{background:var(--surface-2);color:var(--ink-2)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal .ch{text-align:center;font-size:10px;font-weight:800;color:var(--ink-3);padding:2px 0}
+.cal .cd{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;cursor:pointer;border:1px solid transparent;background:var(--night-2);color:var(--ink-2)}
+.cal .cd.empty{background:transparent;cursor:default}
+.cal .cd.today{border-color:var(--ember)}
+.cal .cd.has{background:linear-gradient(135deg,var(--ember),#ff8a5c);color:#fff}
+.cal .cd .pvdot{width:4px;height:4px;border-radius:50%;background:var(--ember);margin-top:2px}
+.cal .cd.has .pvdot{background:#fff}
+.calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.calnav b{font-size:14px;font-weight:800}
+.calnav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 
 /* INTRODUÇÃO ANIMADA */
 .intro{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:18px;
@@ -452,7 +478,8 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
       <svg class="mon" viewBox="0 0 40 40" fill="none" id="monSvg" aria-hidden="true"></svg>
       <div><h1>Kizuna</h1><small id="brandSub">O Pomar do Linn</small></div>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="syncdot" id="syncDot" title="Sincronização"></span>
       <button class="iconbtn" id="helpBtn" title="Ver introdução" aria-label="Ver introdução">?</button>
       <button class="iconbtn" id="themeBtn" title="Tema" aria-label="Alternar tema">☀</button>
     </div>
@@ -490,6 +517,7 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
       <div id="reminderSlot"></div>
     </div>
 
+    <div id="provasSlot"></div>
     <div id="daySel"></div>
     <div class="section-title" id="missTitle">Agenda de hoje</div>
     <div id="todayMissions"></div>
@@ -650,8 +678,31 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
 <div class="toast" id="toast"></div>
 <canvas class="confetti" id="confetti" style="display:none"></canvas>
 
+<!-- Firebase (sincronização entre aparelhos). Carrega só quando há internet; o app funciona offline mesmo assim. -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-storage-compat.js"></script>
+
 <script>
 "use strict";
+
+/* ======================================================================
+   SINCRONIZAÇÃO (Firebase) — preencha com a config do SEU projeto.
+   Mesmo FAMILIA_ID em TODOS os aparelhos da família (iPhone e iPad da
+   criança + celulares do pai e da mãe). Deixe apiKey vazio para rodar
+   100% local (sem sincronização).
+   ====================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  databaseURL: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+const FAMILIA_ID = "mafe";
 
 /* ---------- Constantes de tema ---------- */
 const RESP = {
@@ -746,7 +797,48 @@ function load(){
   catch(e){S=seed();}
   if(!S||!S.profile) S=seed();
 }
-function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} cloudPushSoon(); }
+
+/* ================= Sincronização em nuvem (Firebase, opcional) ================= */
+let FB=null, FBDB=null, FBST=null, cloudReady=false, applyingRemote=false, lastRev=0, pushTimer=null;
+function setSyncBadge(txt,cls){const b=$("#syncDot");if(!b)return;b.textContent=txt;b.className="syncdot "+(cls||"");}
+function cloudStart(){
+  if(cloudReady)return; cloudReady=true; setSyncBadge("☁︎","on");
+  FBDB.ref(".info/connected").on("value",s=>{ setSyncBadge(s.val()?"☁︎":"☁︎⃠", s.val()?"on":"off"); });
+  FBDB.ref("familias/"+FAMILIA_ID).on("value",snap=>{
+    const v=snap.val();
+    if(!v){ cloudPush(true); return; }        // nuvem vazia → envia o estado local
+    if(v.rev && v.rev===lastRev) return;       // eco da nossa própria escrita
+    if(v.rev && v.rev<lastRev) return;         // mais antigo → ignora
+    if(v.data){ lastRev=v.rev||Date.now(); applyRemote(v.data); }
+  });
+}
+function cloudInit(){
+  if(!FIREBASE_CONFIG.apiKey || !window.firebase){ return; } // sem config ou sem internet → só local
+  try{
+    FB=firebase.initializeApp(FIREBASE_CONFIG);
+    FBDB=firebase.database(); FBST=firebase.storage();
+    setSyncBadge("☁︎…","off");
+    firebase.auth().onAuthStateChanged(user=>{ if(user) cloudStart(); });
+    firebase.auth().signInAnonymously().catch(()=>setSyncBadge("☁︎⃠","off")); // login anônimo (dados só com auth)
+  }catch(e){ cloudReady=false; setSyncBadge("☁︎⃠","off"); }
+}
+function applyRemote(data){
+  applyingRemote=true;
+  try{ S=data; migrate(); save(); refreshAll(); if($("#paisPanel")&&$("#paisPanel").style.display==="block")renderPais(); }
+  catch(e){}
+  applyingRemote=false;
+}
+function cloudPush(force){
+  if(!cloudReady || (applyingRemote && !force)) return;
+  try{ lastRev=Date.now();
+    FBDB.ref("familias/"+FAMILIA_ID).set({rev:lastRev, ts:lastRev, data:S});
+  }catch(e){}
+}
+function cloudPushSoon(){
+  if(!cloudReady || applyingRemote) return;
+  clearTimeout(pushTimer); pushTimer=setTimeout(()=>cloudPush(false),500);
+}
 
 /* ---------- Helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -766,6 +858,9 @@ function approvedPts(id,dk){const v=compRaw(id,dk);
 function isApproved(id,dk){return taskState(id,dk)==="ok";}
 function isDone(id){return isApproved(id,todayKey());}
 function approvedCount(dk){const d=S.completions[dk]||{};return Object.keys(d).filter(id=>taskState(id,dk)==="ok").length;}
+/* Quais trilhas exigem confirmação do guardião (padrão: só Estudos/escolares) */
+function domsAprovacao(){return (S.config&&S.config.aprovarDoms)||["estudos"];}
+function precisaAprovacao(t){return domsAprovacao().includes(t.dom);}
 
 /* ---------- Pontos por dia (redistribuição mantendo a meta do dia) ---------- */
 function metaDia(){return Math.max(1,(S.config&&S.config.metaDia)||100);}
@@ -820,22 +915,39 @@ function checkMedals(){
 function comboTier(){ return approvedCount(todayKey()); }
 function comboMult(tier){return Math.min(1.5, 1 + tier*0.1);}
 
-/* ---------- Toque na missão (criança) → envia para aprovação do guardião ---------- */
+/* Marca instantânea (não escolar): a criança ganha XP e vê o humor mudar na hora */
+function marcarFeita(t){
+  const tk=todayKey();S.completions[tk]=S.completions[tk]||{};
+  const tier=comboTier();const g=Math.round(ptsFor(t,weekdayOf(tk))*comboMult(tier));
+  S.completions[tk][t.id]={st:"ok",pts:g};
+  S.profile.xp+=g;S.profile.moedas+=coinsFor(g);
+  bumpStreakOnDone();linnReact(tier+1);checkMedals();
+  return {g,tier};
+}
+/* ---------- Toque na missão (criança) ---------- */
 function toggleTask(t,rowEl){
   const tk=todayKey();
   S.completions[tk]=S.completions[tk]||{};
   const st=taskState(t.id,tk);
+  const slash=()=>{ if(rowEl){const sl=document.createElement("div");sl.className="slash go";rowEl.appendChild(sl);setTimeout(()=>sl.remove(),520);} };
   if(st==="none"){
-    S.completions[tk][t.id]={st:"pend",ts:Date.now()};
-    if(rowEl){const sl=document.createElement("div");sl.className="slash go";rowEl.appendChild(sl);
-      setTimeout(()=>sl.remove(),520);}
-    toast("Enviado para o guardião confirmar ⏳");
-    save(); renderToday();
+    if(precisaAprovacao(t)){ // escolar → aguarda guardião
+      S.completions[tk][t.id]={st:"pend",ts:Date.now()};slash();
+      toast("Enviado para o guardião confirmar ⏳");
+      save(); renderToday();
+    }else{ // livre → marca na hora
+      const r=marcarFeita(t);slash();
+      toast("+"+r.g+" XP"+(comboMult(r.tier)>1?` (combo x${comboMult(r.tier).toFixed(1)})`:""));
+      save(); renderHero(); renderToday();
+    }
   }else if(st==="pend"){
     delete S.completions[tk][t.id];
     save(); renderToday();
-  }else{ // já aprovada
-    toast("Já confirmada pelo guardião ✓");
+  }else{ // já aprovada/concluída
+    if(precisaAprovacao(t)){ toast("Já confirmada pelo guardião ✓"); }
+    else{ const g=approvedPts(t.id,tk);delete S.completions[tk][t.id];
+      S.profile.xp=Math.max(0,S.profile.xp-g);S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(g));
+      save(); renderHero(); renderToday(); }
   }
 }
 
@@ -1212,6 +1324,36 @@ function idbGet(id){return idb().then(db=>new Promise((res,rej)=>{const tx=db.tr
   const rq=tx.objectStore("media").get(id);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);}));}
 function idbDel(id){return idb().then(db=>new Promise((res)=>{const tx=db.transaction("media","readwrite");
   tx.objectStore("media").delete(id);tx.oncomplete=()=>res();tx.onerror=()=>res();})).catch(()=>{});}
+function idbDelStore(c){ // remove a mídia dos dois lugares: aparelho (IndexedDB) e nuvem (Storage)
+  if(c.mediaId)idbDel(c.mediaId);
+  if(cloudReady&&FBST&&(c.path||c.url)){ try{ (c.path?FBST.ref(c.path):FBST.refFromURL(c.url)).delete().catch(()=>{}); }catch(e){} }
+}
+/* Limpeza automática de comprovações antigas já revisadas (mantém a rotina leve) */
+function comprovAntigas(dias){
+  const d=(typeof dias==="number"?dias:(S.config&&S.config.limpezaDias)||30);
+  if(!d||d<=0)return []; const limite=Date.now()-d*86400000;
+  return (S.comprovacoes||[]).filter(c=>c.status&&c.status!=="pendente"&&(c.ts||0)<limite);
+}
+function limparComprovacoes(dias){
+  const alvos=comprovAntigas(dias); if(!alvos.length)return 0;
+  const ids=new Set(alvos.map(c=>c.id));
+  alvos.forEach(idbDelStore);
+  S.comprovacoes=(S.comprovacoes||[]).filter(c=>!ids.has(c.id));
+  S.config.limpezaUltima=Date.now(); save();
+  return alvos.length;
+}
+function autoLimpeza(){ // roda no máximo 1x por dia, sem avisar
+  const dias=(S.config&&S.config.limpezaDias)||0; if(!dias)return;
+  if(Date.now()-((S.config&&S.config.limpezaUltima)||0) < 86400000)return;
+  const n=limparComprovacoes(dias);
+  if(n&&typeof renderComprov==="function"){renderComprov();if(typeof renderPais==="function")renderPais();}
+}
+function mediaHTML(tipo,src){return tipo==="foto"?`<img src="${src}">`:tipo==="video"?`<video src="${src}" controls playsinline></video>`:`<audio src="${src}" controls></audio>`;}
+function fillMedia(slot,c){
+  if(c.url){ slot.innerHTML=mediaHTML(c.tipo,c.url); return; }       // nuvem (qualquer aparelho)
+  idbGet(c.mediaId).then(rec=>{ if(!rec||!rec.blob){slot.innerHTML=`<div class="empty" style="padding:10px">Mídia está só no aparelho que enviou.</div>`;return;}
+    slot.innerHTML=mediaHTML(c.tipo,URL.createObjectURL(rec.blob)); }).catch(()=>{slot.innerHTML=`<div class="empty" style="padding:10px">Não consegui abrir a mídia.</div>`;});
+}
 
 function sheetComprovar(task){
   const titulo = task ? task.titulo : "Meta do dia";
@@ -1238,14 +1380,27 @@ function sheetComprovar(task){
   $("#cpSend").onclick=()=>{
     if(!file){toast("Escolha uma foto, vídeo ou áudio");return;}
     const id=Math.random().toString(36).slice(2,10);
-    idbPut(id,file).then(()=>{
-      S.comprovacoes.push({id:Math.random().toString(36).slice(2,9),taskId:task?task.id:null,titulo,
-        tipo,mediaId:id,nota:$("#cpNota").value.trim(),data:todayKey(),ts:Date.now(),status:"pendente"});
-      // vincula: se for de uma tarefa ainda não marcada, deixa pendente de aprovação
+    const reg={id:Math.random().toString(36).slice(2,9),taskId:task?task.id:null,titulo,
+      tipo,mediaId:id,url:"",nota:$("#cpNota").value.trim(),data:todayKey(),ts:Date.now(),status:"pendente"};
+    const finalizar=()=>{
+      S.comprovacoes.push(reg);
       if(task){const tk=todayKey();S.completions[tk]=S.completions[tk]||{};
-        if(taskState(task.id,tk)==="none")S.completions[tk][task.id]={st:"pend",ts:Date.now()};}
+        if(taskState(task.id,tk)==="none"){
+          if(precisaAprovacao(task))S.completions[tk][task.id]={st:"pend",ts:Date.now()};
+          else{marcarFeita(task);renderHero();}   // não escolar: já conta o XP
+        }}
       save();closeSheet();renderToday();toast("Comprovação enviada aos pais 📨");confetti();
-    }).catch(()=>toast("Não consegui salvar a mídia neste aparelho"));
+    };
+    $("#cpSend").disabled=true;$("#cpSend").textContent="Enviando…";
+    idbPut(id,file).catch(()=>{}).then(()=>{
+      if(cloudReady && FBST){ // Opção B: sobe a mídia para a nuvem para os pais verem de qualquer aparelho
+        const ext=(file.name&&file.name.includes("."))?file.name.split(".").pop():(tipo==="foto"?"jpg":tipo==="video"?"mp4":"m4a");
+        const path="familias/"+FAMILIA_ID+"/media/"+id+"."+ext;
+        const r=FBST.ref(path);
+        r.put(file).then(()=>r.getDownloadURL()).then(u=>{reg.url=u;reg.path=path;finalizar();})
+          .catch(()=>{toast("Mídia salva neste aparelho (sem nuvem agora)");finalizar();});
+      } else { finalizar(); }
+    });
   };
 }
 
@@ -1268,14 +1423,10 @@ function renderComprov(){
         <button class="btn primary cpOk" style="flex:1">Aprovar ✓</button>
         <button class="btn ghost cpNo" style="flex:1;color:var(--ember)">Recusar</button></div>`:
         `<button class="btn ghost cpDel" style="margin-top:8px;color:var(--ink-3)">Remover</button>`}`;
-    const slot=card.querySelector(".media-prev");
-    idbGet(c.mediaId).then(rec=>{ if(!rec||!rec.blob){slot.innerHTML=`<div class="empty" style="padding:12px">Mídia não encontrada neste aparelho.</div>`;return;}
-      const url=URL.createObjectURL(rec.blob);
-      slot.innerHTML = c.tipo==="foto"?`<img src="${url}">`:c.tipo==="video"?`<video src="${url}" controls playsinline></video>`:`<audio src="${url}" controls></audio>`;
-    }).catch(()=>{slot.innerHTML=`<div class="empty" style="padding:12px">Não consegui abrir a mídia.</div>`;});
+    fillMedia(card.querySelector(".media-prev"),c);
     const ok=card.querySelector(".cpOk");if(ok)ok.onclick=()=>{c.status="aprovada";save();toast("Comprovação aprovada ✓");renderComprov();renderPais();};
     const no=card.querySelector(".cpNo");if(no)no.onclick=()=>{c.status="recusada";save();toast("Comprovação recusada");renderComprov();renderPais();};
-    const del=card.querySelector(".cpDel");if(del)del.onclick=()=>{idbDel(c.mediaId);S.comprovacoes=S.comprovacoes.filter(x=>x.id!==c.id);save();renderComprov();renderPais();};
+    const del=card.querySelector(".cpDel");if(del)del.onclick=()=>{idbDelStore(c);S.comprovacoes=S.comprovacoes.filter(x=>x.id!==c.id);save();renderComprov();renderPais();};
     box.appendChild(card);
   };
   if(pend.length){const h=document.createElement("div");h.className="plan-note";h.textContent="A revisar:";box.appendChild(h);pend.forEach(render);}
@@ -1327,11 +1478,7 @@ function renderTarefasPend(){
       <div class="cp-actions">
         <button class="btn primary tOk" style="flex:1">Confirmar ✓</button>
         <button class="btn ghost tNo" style="flex:1;color:var(--ember)">Recusar</button></div>`;
-    if(media.length){const slot=card.querySelector(".media-prev");
-      idbGet(media[0].mediaId).then(rec=>{ if(!rec||!rec.blob){slot.innerHTML=`<div class="empty" style="padding:10px">Mídia não encontrada.</div>`;return;}
-        const url=URL.createObjectURL(rec.blob);const tp=media[0].tipo;
-        slot.innerHTML= tp==="foto"?`<img src="${url}">`:tp==="video"?`<video src="${url}" controls playsinline></video>`:`<audio src="${url}" controls></audio>`;
-      }).catch(()=>{slot.innerHTML="";});}
+    if(media.length){ fillMedia(card.querySelector(".media-prev"),media[0]); }
     card.querySelector(".tOk").onclick=()=>aprovarTarefa(p.dk,p.id,true);
     card.querySelector(".tNo").onclick=()=>aprovarTarefa(p.dk,p.id,false);
     box.appendChild(card);
@@ -1356,6 +1503,86 @@ function renderResgates(){
     const st=x.status==="aprovado"?`<span class="cp-badge cp-ok">aprovado</span>`:`<span class="cp-badge cp-no">recusado</span>`;
     row.innerHTML=`<div style="flex:1">${escapeHtml(x.titulo)} ${st}</div><span class="xpwin">🪙 ${x.custo}</span>`;
     box.appendChild(row);});
+}
+
+/* ========== CALENDÁRIO DE PROVAS ========== */
+let calMes=0; // deslocamento de meses no mini-calendário do Guardião
+const MESES=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function provasFuturas(){const tk=todayKey();return (S.provas||[]).filter(p=>p.data>=tk).sort((a,b)=>a.data.localeCompare(b.data));}
+function diasAte(ds){const t=new Date(todayKey()+"T00:00:00");const d=new Date(ds+"T00:00:00");return Math.round((d-t)/86400000);}
+/* Card no Hoje: próximas provas com contagem regressiva */
+function renderProvasHoje(){
+  const slot=$("#provasSlot");if(!slot)return;slot.innerHTML="";
+  const ev=provasFuturas().slice(0,4);
+  if(!ev.length)return;
+  const card=document.createElement("div");card.className="card provas-hoje";
+  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <strong style="font-size:15px">📝 Próximas provas</strong><span class="pill">Calendário</span></div>`;
+  ev.forEach(p=>{const n=diasAte(p.data);const d=new Date(p.data+"T00:00:00");
+    const wd=["dom","seg","ter","qua","qui","sex","sáb"][d.getDay()];
+    const cd = n===0?`Hoje!`:n===1?`Amanhã`:`faltam ${n} dias`;
+    const row=document.createElement("div");row.className="pv-row";
+    row.innerHTML=`<div class="pv-when"><b>${pad2(d.getDate())}/${pad2(d.getMonth()+1)}</b><small>${wd}${p.hora?" · "+p.hora:""}</small></div>
+      <div style="flex:1;font-weight:700;font-size:14.5px">${escapeHtml(p.materia)}</div>
+      <span class="pv-cd ${n<=3?"soon":"ok"}">${cd}</span>`;
+    card.appendChild(row);});
+  slot.appendChild(card);
+}
+/* Guardião: mini-calendário do mês + lista + cadastro */
+function renderProvas(){
+  const cal=$("#provasCal");if(!cal)return;cal.innerHTML="";
+  const base=new Date();base.setDate(1);base.setMonth(base.getMonth()+calMes);
+  const ano=base.getFullYear(),mes=base.getMonth();
+  const prim=new Date(ano,mes,1).getDay();const ndias=new Date(ano,mes+1,0).getDate();
+  const tk=todayKey();
+  const porDia={};(S.provas||[]).forEach(p=>{const[y,m,dd]=p.data.split("-").map(Number);if(y===ano&&m-1===mes)(porDia[+dd]=porDia[+dd]||[]).push(p);});
+  const nav=document.createElement("div");nav.className="calnav";
+  nav.innerHTML=`<button id="calPrev">‹</button><b>${MESES[mes]} ${ano}</b><button id="calNext">›</button>`;
+  cal.appendChild(nav);
+  const grid=document.createElement("div");grid.className="cal";
+  ["D","S","T","Q","Q","S","S"].forEach(h=>{const c=document.createElement("div");c.className="ch";c.textContent=h;grid.appendChild(c);});
+  for(let i=0;i<prim;i++){const c=document.createElement("div");c.className="cd empty";grid.appendChild(c);}
+  for(let dd=1;dd<=ndias;dd++){
+    const ds=ano+"-"+pad2(mes+1)+"-"+pad2(dd);const has=porDia[dd];
+    const c=document.createElement("div");c.className="cd"+(has?" has":"")+(ds===tk?" today":"");
+    c.innerHTML=`${dd}${has?`<span class="pvdot"></span>`:""}`;
+    c.onclick=()=>{ if(has)sheetProva(has[0]); else sheetProva(null,ds); };
+    grid.appendChild(c);
+  }
+  cal.appendChild(grid);
+  $("#calPrev").onclick=()=>{calMes--;renderProvas();};
+  $("#calNext").onclick=()=>{calMes++;renderProvas();};
+  // lista
+  const list=$("#provasList");list.innerHTML="";
+  const fut=provasFuturas();
+  if(!fut.length)list.innerHTML=`<div class="empty">Nenhuma prova cadastrada. Toque num dia do calendário ou em “Nova prova”.</div>`;
+  fut.forEach(p=>{const n=diasAte(p.data);const d=new Date(p.data+"T00:00:00");
+    const row=document.createElement("div");row.className="rowedit";
+    row.innerHTML=`<div style="flex:1"><div style="font-weight:700">${escapeHtml(p.materia)}</div>
+      <div class="muted" style="font-size:11px;font-weight:700">${pad2(d.getDate())}/${pad2(d.getMonth()+1)}${p.hora?" · "+p.hora:""} · ${n===0?"hoje":n===1?"amanhã":"em "+n+" dias"}</div></div>
+      <button class="del" title="Editar">✎</button><button class="del" title="Excluir" style="color:var(--ember)">🗑</button>`;
+    const bts=row.querySelectorAll(".del");bts[0].onclick=()=>sheetProva(p);
+    bts[1].onclick=()=>{S.provas=S.provas.filter(x=>x.id!==p.id);save();renderProvas();renderProvasHoje();toast("Prova removida");};
+    list.appendChild(row);});
+}
+function sheetProva(edit,preData){
+  const novo=!edit;
+  openSheet(`<h3>${novo?"Nova prova":"Editar prova"}</h3>
+    <label class="fld">Matéria</label><input id="pvMat" value="${edit?escapeHtml(edit.materia):""}" placeholder="Ex.: Matemática">
+    <label class="fld">Data</label><input id="pvData" type="date" value="${edit?edit.data:(preData||"")}">
+    <label class="fld">Horário (opcional)</label><input id="pvHora" type="time" value="${edit&&edit.hora?edit.hora:""}">
+    <label class="fld">Conteúdo / observações (opcional)</label><input id="pvNota" value="${edit&&edit.nota?escapeHtml(edit.nota):""}" placeholder="Ex.: capítulos 3 e 4">
+    <button class="btn primary" id="pvSave" style="margin-top:16px">${novo?"Adicionar prova":"Salvar"}</button>
+    ${edit?`<button class="btn ghost" id="pvDel" style="margin-top:9px;color:var(--ember)">Excluir prova</button>`:""}`);
+  $("#pvSave").onclick=()=>{
+    const materia=$("#pvMat").value.trim();const data=$("#pvData").value;
+    if(!materia){toast("Escreva a matéria");return;} if(!data){toast("Escolha a data");return;}
+    const hora=$("#pvHora").value,nota=$("#pvNota").value.trim();
+    if(edit){edit.materia=materia;edit.data=data;edit.hora=hora;edit.nota=nota;}
+    else S.provas.push({id:Math.random().toString(36).slice(2,9),materia,data,hora,nota});
+    save();closeSheet();renderProvas();renderProvasHoje();toast(novo?"Prova adicionada 📝":"Prova atualizada");
+  };
+  if(edit)$("#pvDel").onclick=()=>{S.provas=S.provas.filter(x=>x.id!==edit.id);save();closeSheet();renderProvas();renderProvasHoje();toast("Prova removida");};
 }
 
 /* ---------- Render: TESOURO ---------- */
@@ -1588,6 +1815,13 @@ function renderPais(){
    <div class="section-title">Resgates${resgatesPendentes()?` · <span style="color:var(--ember)">${resgatesPendentes()} a validar</span>`:""}</div>
    <div class="card" style="padding:6px 16px" id="paisResgates"></div>
 
+   <div class="section-title">📝 Calendário de provas</div>
+   <div class="card" style="padding:12px 16px">
+     <div id="provasCal"></div>
+     <div id="provasList" style="margin-top:8px"></div>
+     <button class="btn ghost" id="addProvaBtn" style="margin-top:12px">＋ Nova prova</button>
+   </div>
+
    <div class="section-title">Missões por dia</div>
    <div class="card" style="padding:12px 16px">
      <div class="muted" style="font-size:12px;font-weight:600;margin-bottom:8px">Escolha um dia para incluir, editar ou excluir missões. Os pontos se redistribuem automaticamente dentro da meta do dia.</div>
@@ -1641,6 +1875,19 @@ function renderPais(){
        <input type="checkbox" id="cFloat" ${S.config.avatarFixoTopo?"checked":""} style="width:auto">
        <span style="font-weight:700;font-size:14px">Fixar o Linn no topo ao rolar<br><span class="muted" style="font-size:11px;font-weight:600">o rostinho acompanha a tela e some quando o avatar grande está visível</span></span>
      </label>
+     <label class="fld" style="margin-top:14px">Trilhas que precisam da sua confirmação</label>
+     <div class="daychips" id="aprovChips"></div>
+     <div class="muted" style="font-size:11px;font-weight:600;margin-top:5px">As demais trilhas a criança marca sozinha e já ganha os pontos (o Linn muda de humor na hora).</div>
+     <label class="fld" style="margin-top:14px">Guardar comprovações (fotos/vídeos/áudios)</label>
+     <select id="cLimpeza" style="width:100%;padding:11px 12px;border-radius:12px;border:1.5px solid var(--line);font-size:14px;font-weight:700;background:#fff">
+       <option value="7">por 7 dias</option>
+       <option value="14">por 14 dias</option>
+       <option value="30">por 30 dias</option>
+       <option value="90">por 90 dias</option>
+       <option value="0">nunca apagar (manual)</option>
+     </select>
+     <div class="muted" style="font-size:11px;font-weight:600;margin-top:5px">Comprovações já revisadas (aprovadas/recusadas) são apagadas do aparelho e da nuvem após esse prazo, deixando o app leve. As pendentes nunca são apagadas.</div>
+     <button class="btn ghost" id="limparBtn" style="margin-top:9px">🧹 Limpar comprovações antigas agora</button>
      <button class="btn primary" id="saveCfg" style="margin-top:14px">Salvar ajustes</button>
      <div style="display:flex;gap:9px;margin-top:12px">
        <button class="btn ghost" id="expBtn" style="width:auto;flex:1">Exportar backup</button>
@@ -1678,6 +1925,15 @@ function renderPais(){
   renderTarefasPend();
   renderComprov();
   renderResgates();
+  renderProvas();
+  // trilhas que exigem confirmação (chips)
+  const ac=$("#aprovChips");
+  if(ac){ac.innerHTML="";let sel=domsAprovacao().slice();
+    DOM_ORDER.forEach(d=>{const el=document.createElement("div");el.className="dchip"+(sel.includes(d)?" on":"");
+      el.style.width="auto";el.style.padding="8px 10px";el.textContent=RESP[d].icon+" "+RESP[d].sub;
+      el.onclick=()=>{ if(sel.includes(d))sel=sel.filter(x=>x!==d); else sel.push(d);
+        S.config.aprovarDoms=sel;save();renderToday();el.classList.toggle("on");};
+      ac.appendChild(el);});}
 
   // recompensas
   const rw=$("#paisRew");rw.innerHTML="";
@@ -1743,6 +1999,7 @@ function renderPais(){
   $("#saveMetaDia").onclick=()=>{S.config.metaDia=Math.max(1,parseInt($("#cMetaDia").value)||100);
     save();renderPaisDia();renderToday();toast("Meta do dia salva — pontos redistribuídos");};
   $("#addDiaBtn").onclick=()=>sheetTask(null,PDIA);
+  $("#addProvaBtn").onclick=()=>sheetProva(null);
   $("#saveFis").onclick=()=>{S.fisico.metaSemanal=Math.max(1,parseInt($("#fMeta").value)||100);
     S.fisico.mesada=Math.max(0,parseFloat($("#fMesada").value)||0);save();renderTreino();toast("Meta e mesada salvas");};
   $("#savePoup").onclick=()=>{S.poupanca.titulo=$("#pTitle").value||"Meu tesouro";
@@ -1750,8 +2007,16 @@ function renderPais(){
   $("#saveCfg").onclick=()=>{S.profile.nome=$("#cName").value||"Linn";
     S.config.hidratacaoMeta=Math.max(1,Math.min(12,parseInt($("#cHydro").value)||6));
     S.config.avatarFixoTopo=$("#cFloat").checked;
+    const lz=$("#cLimpeza");if(lz)S.config.limpezaDias=parseInt(lz.value)||0;
     const np=$("#cPin").value.replace(/\D/g,"");if(np.length===4)S.config.pin=np;
     save();renderHero();renderHydro();updateLinnTop(linnMood());toast("Ajustes salvos");};
+  const lzSel=$("#cLimpeza");if(lzSel)lzSel.value=String(S.config.limpezaDias);
+  const lb=$("#limparBtn");if(lb)lb.onclick=()=>{
+    const d=parseInt(($("#cLimpeza")||{}).value)||S.config.limpezaDias||30;
+    const prazo=d>0?d:30, cnt=comprovAntigas(prazo).length;
+    if(!cnt){toast("Nenhuma comprovação antiga para limpar 🌿");return;}
+    if(confirm("Apagar "+cnt+" comprovação(ões) já revisada(s) com mais de "+prazo+" dias? (do aparelho e da nuvem)")){
+      const n=limparComprovacoes(prazo);renderComprov();renderPais();toast(n+" comprovação(ões) removida(s) 🧹");}};
   $("#expBtn").onclick=exportBackup;
   $("#impBtn").onclick=()=>$("#impFile").click();
   $("#impFile").onchange=importBackup;
@@ -1998,7 +2263,7 @@ function go(scr){
   $$(".screen").forEach(s=>s.classList.remove("active"));
   $("#scr-"+scr).classList.add("active");
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.scr===scr));
-  if(scr==="hoje"){SEL=null;WK=0;renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();}
+  if(scr==="hoje"){SEL=null;WK=0;renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();}
   if(scr==="treino")renderTreino();
   if(scr==="dojo")renderDojo();
   if(scr==="tesouro")renderTesouro();
@@ -2034,6 +2299,10 @@ function migrate(){
   if(!S.comprovacoes)S.comprovacoes=[];
   if(!S.resgates)S.resgates=[];
   if(typeof S.config.introVista!=="boolean")S.config.introVista=false;
+  if(!Array.isArray(S.config.aprovarDoms))S.config.aprovarDoms=["estudos"];
+  if(!Array.isArray(S.provas))S.provas=[];
+  if(typeof S.config.limpezaDias!=="number")S.config.limpezaDias=30;
+  if(typeof S.config.limpezaUltima!=="number")S.config.limpezaUltima=0;
   // completions legadas (number/true) -> {st:'ok',pts}
   Object.keys(S.completions||{}).forEach(dk=>{const day=S.completions[dk];Object.keys(day).forEach(id=>{
     const v=day[id]; if(typeof v==="number")day[id]={st:"ok",pts:v}; else if(v===true)day[id]={st:"ok",pts:0}; });});
@@ -2122,6 +2391,9 @@ function cleanTitle(raw){
 function classify(raw){
   const t=norm(raw);
   const data=extractDate(t), hora=extractTime(t), dom=detectDomain(t);
+  if( /(tenho (uma )?prova|prova de|prova da|teste de|avaliacao de|simulado de|vai ter prova|tem prova|marca(r)? (uma )?prova|prova (na|no|dia|amanha|segunda|terca|quarta|quinta|sexta|sabado|domingo))/.test(t)
+      && !/estudar|estudo|revisar|licao/.test(t) && data )
+    return {intent:"prova", raw, data, hora};
   if(/(comprova|comprovar|mandar (uma )?(foto|video|audio)|enviar (uma )?(foto|video|audio)|tirar (uma )?foto|gravar (um )?(video|audio)|mostrar (pro|para) (papai|mamae|meus pais)|provar que)/.test(t))
     return {intent:"comprovar", raw};
   if(/\bagua\b/.test(t) && /(bebi|tomei|copo|beber|hidrat|tomar agua|bebe)/.test(t))
@@ -2148,7 +2420,7 @@ function classify(raw){
   }
   return {intent:"fallback", raw};
 }
-function refreshAll(){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();renderTesouro();renderDojo();renderTreino();}
+function refreshAll(){renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();renderTesouro();renderDojo();renderTreino();}
 function agTreino(c){return logTreinoByText(norm(c.raw));}
 function agComprovar(c){
   const t=norm(c.raw);const tk=todayKey();const wd=weekdayOf(tk);
@@ -2157,6 +2429,17 @@ function agComprovar(c){
   setTimeout(()=>{closeAssist();sheetComprovar(alvo||null);},250);
   return {reply:alvo?`Vou abrir para você mandar a comprovação de “${alvo.titulo}” pros seus pais 📸`
     :"Vou abrir para você mandar uma foto, vídeo ou áudio pros seus pais 📸"};
+}
+function agProva(c){
+  if(!c.data)return {reply:"Para qual dia é a prova? Diga por exemplo “prova de matemática dia 25” ou “prova de ciências na quinta”."};
+  let base=norm(c.raw).replace(/\b(tenho|tem|vou ter|vai ter|marcar|marca|anota|anote|lembra|lembre)\b/g," ")
+    .replace(/\b(prova|teste|avaliacao|simulado)( de| da| do| dos| das)?\b/g," ");
+  let materia=cleanTitle(base)||"Prova";
+  const p={id:Math.random().toString(36).slice(2,9),materia,data:c.data,hora:c.hora||"",nota:""};
+  S.provas.push(p);save();refreshAll();
+  const L=dateLabel(c.data);const n=diasAte(c.data);
+  return {reply:`Feito ✓ Anotei a prova de “${materia}” para ${L.big} (${L.small})${c.hora?" às "+c.hora:""} — ${n===0?"é hoje!":n===1?"é amanhã!":"faltam "+n+" dias"}. 📝`,
+    undo:()=>{S.provas=S.provas.filter(x=>x.id!==p.id);save();refreshAll();}};
 }
 /* --- agentes especializados --- */
 function agTarefa(c){
@@ -2184,13 +2467,18 @@ function agConcluir(c){
   const explicitAll=/(meta do dia|tudo|todas|minhas missoes|missões do dia|do dia)/.test(t);
   let alvo=null;
   if(!explicitAll)alvo=undone.find(x=>{const kt=norm(x.titulo).split(" ").filter(w=>w.length>3);return kt.some(w=>t.includes(w));});
-  const feitos=[];
-  (alvo?[alvo]:undone).forEach(x=>{S.completions[tk][x.id]={st:"pend",ts:Date.now()};feitos.push(x.id);});
+  const feitos=[];let pend=0,inst=0,ganho=0;
+  (alvo?[alvo]:undone).forEach(x=>{
+    if(precisaAprovacao(x)){S.completions[tk][x.id]={st:"pend",ts:Date.now()};pend++;}
+    else{const r=marcarFeita(x);ganho+=r.g;inst++;}
+    feitos.push(x.id);});
   if(!feitos.length)return {reply:"Tudo já foi marcado por aqui. Mandou bem! 🌸"};
   save();refreshAll();
-  const nome=alvo?`“${alvo.titulo}”`:`${feitos.length} missõe${feitos.length>1?"s":""}`;
-  return {reply:`Feito ✓ Enviei ${nome} para o papai/mamãe confirmar ⏳. Assim que aprovarem, você ganha os pontos!`,
-    undo:()=>{feitos.forEach(id=>{delete S.completions[tk][id];});save();refreshAll();}};
+  let msg="Feito ✓ ";
+  if(inst&&!pend)msg+=`Marquei ${inst} missõe${inst>1?"s":""} e você ganhou +${ganho} XP! 🔥`;
+  else if(pend&&!inst)msg+=`Enviei ${pend} missõe${pend>1?"s":""} escolar${pend>1?"es":""} para o papai/mamãe confirmar ⏳.`;
+  else msg+=`+${ganho} XP agora, e ${pend} escolar${pend>1?"es":""} foi para confirmação dos pais ⏳.`;
+  return {reply:msg, undo:()=>{feitos.forEach(id=>{const g=approvedPts(id,tk);if(isApproved(id,tk)){S.profile.xp=Math.max(0,S.profile.xp-g);S.profile.moedas=Math.max(0,S.profile.moedas-coinsFor(g));}delete S.completions[tk][id];});save();refreshAll();}};
 }
 function agAgua(c){
   const tk=todayKey();const meta=S.config.hidratacaoMeta;const q=Math.max(1,Math.round(c.qtd||1));
@@ -2238,6 +2526,7 @@ function dispatch(raw){
     case "agenda":return agAgenda(c);
     case "treino":return agTreino(c);
     case "comprovar":return agComprovar(c);
+    case "prova":return agProva(c);
     case "tarefa":return agTarefa(c);
     default:return {reply:"Não entendi bem 🐦‍⬛. Eu posso:\n• criar missões — “inclua a missão escovar os dentes às 20h”\n• agendar — “marque terapia quinta 14h”\n• concluir — “considere a meta do dia realizada”\n• registrar treino — “corri 20 minutos”\n• enviar comprovação — “quero mandar uma foto pros meus pais”\n• registrar água — “bebi 2 copos de água”\n• ver progresso — “como estou?”"};
   }
@@ -2349,13 +2638,14 @@ function initIntro(){
 /* ---------- Init ---------- */
 load();migrate();
 if(!S.config.tema)S.config.tema=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
-applyTheme();drawMon();renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();
-initAssistant();initIntro();
+applyTheme();drawMon();renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();
+initAssistant();initIntro();cloudInit();
+setTimeout(()=>{try{autoLimpeza();}catch(e){}},5000); // espera a nuvem conectar p/ apagar também do Storage
 $("#linnTop").onclick=()=>{scrollTo({top:0,behavior:"smooth"});};
 window.addEventListener("scroll",checkLinnTop,{passive:true});
 updateLinnTop(linnMood());
 setInterval(checkReminders,30000);
-window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderDaySel();renderToday();renderReminder();renderAgenda();} });
+window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();} });
 if(!S.config.introVista){ setTimeout(openIntro,400); }
 else { try{ if(!sessionStorage.getItem("kiz_greeted")){ sessionStorage.setItem("kiz_greeted","1"); setTimeout(()=>openAssist(true),650); } }catch(e){} }
 </script>
