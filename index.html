@@ -1168,8 +1168,8 @@ function renderReminder(){
   S.rotina.forEach(t=>{
     if(!taskOnDay(t,wd)||taskState(t.id,tk)!=="none")return;
     const ini=tStart(t);
-    if(ini){comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:ini,min:hm2min(ini),fim:tEnd(t)?hm2min(tEnd(t)):null,ev:false});}
-    else semHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:""});
+    if(ini){comHora.push({icon:(RESP[t.dom]||RESP.metas).icon,titulo:t.titulo,hora:ini,min:hm2min(ini),fim:tEnd(t)?hm2min(tEnd(t)):null,ev:false});}
+    else semHora.push({icon:(RESP[t.dom]||RESP.metas).icon,titulo:t.titulo,hora:""});
   });
   (S.agenda||[]).forEach(e=>{if(e.data===tk&&e.hora){const[h,m]=e.hora.split(":").map(Number);
     comHora.push({icon:(RESP[e.dom]||RESP.terapias).icon,titulo:e.titulo,hora:e.hora,min:h*60+m,fim:null,ev:true});}});
@@ -1291,7 +1291,7 @@ function renderToday(){
 
   const tl=document.createElement("div");tl.className="tl";
   comH.forEach(t=>{
-    const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=RESP[t.dom];
+    const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=(RESP[t.dom]||RESP.metas);
     const ini=tStart(t), fim=tEnd(t);
     const isNow=t.id===agoraId, isNext=t.id===proximaId;
     const late = hoje && st==="none" && !isNow && !isNext && fim && hm2min(fim)!=null && nowMin>=hm2min(fim);
@@ -1321,7 +1321,7 @@ function renderToday(){
     sub.textContent="A qualquer hora do dia";box.appendChild(sub);
     const grp=document.createElement("div");grp.className="group";
     semH.forEach(t=>{
-      const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=RESP[t.dom];
+      const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=(RESP[t.dom]||RESP.metas);
       const row=document.createElement("div");row.className="row"+(done?" done":"")+(pend?" pend":"");
       if(!hoje)row.style.opacity=".82";
       row.innerHTML=`<div class="check">${done?"✓":pend?"⏳":""}</div>
@@ -2138,9 +2138,9 @@ function renderPaisDia(){
   tasks.forEach(t=>{
     const hl=horaLabel(t);
     const row=document.createElement("div");row.className="rowedit";
-    row.innerHTML=`<div style="font-size:16px">${RESP[t.dom].icon}</div>
+    row.innerHTML=`<div style="font-size:16px">${(RESP[t.dom]||RESP.metas).icon}</div>
       <div style="flex:1"><div style="font-weight:700;font-size:14px">${hl?`<span style="color:var(--ink-2)">${hl}</span> · `:""}${escapeHtml(t.titulo)}</div>
-        <div class="muted" style="font-size:11px;font-weight:600">${RESP[t.dom].sub} · peso ${taskWeight(t)}</div></div>
+        <div class="muted" style="font-size:11px;font-weight:600">${(RESP[t.dom]||RESP.metas).sub} · peso ${taskWeight(t)}</div></div>
       <span class="xpwin">+${mp[t.id]||0}</span>
       <button class="del" title="Editar">✎</button>
       <button class="del" title="Excluir" style="color:var(--ember)">🗑</button>`;
@@ -2199,7 +2199,7 @@ function checkReminders(){
   const tk=todayKey();
   S.rotina.forEach(t=>{if(t.horario===hm&&!isDone(t.id)&&notifDone[tk+t.id]!==true){
     notifDone[tk+t.id]=true;
-    try{new Notification("Kizuna · "+RESP[t.dom].nome,{body:t.titulo+" — está na hora!"});}catch(e){}
+    try{new Notification("Kizuna · "+(RESP[t.dom]||RESP.metas).nome,{body:t.titulo+" — está na hora!"});}catch(e){}
   }});
 }
 
@@ -2345,7 +2345,8 @@ function migrate(){
     const v=day[id]; if(typeof v==="number")day[id]={st:"ok",pts:v}; else if(v===true)day[id]={st:"ok",pts:0}; });});
   // peso por missão (converte xp antigo em peso; default 15) e horario -> inicio
   (S.rotina||[]).forEach(t=>{ if(typeof t.peso!=="number"){t.peso=(typeof t.xp==="number"&&t.xp>0)?t.xp:15;}
-    if(!t.inicio&&t.horario){t.inicio=t.horario;delete t.horario;} });
+    if(!t.inicio&&t.horario){t.inicio=t.horario;delete t.horario;}
+    if(!t.dom||!RESP[t.dom])t.dom="metas"; });   // trilha inválida → padrão (evita quebra de renderização)
   if(!S.memoria)S.memoria={recordes:{sequencia:0,pares:0,lista:0}};
   if(!S.fisico){const uid=()=>Math.random().toString(36).slice(2,9);
     S.fisico={metaSemanal:100,mesada:20,catalogo:[
@@ -2485,7 +2486,7 @@ function agTarefa(c){
   const t={id:Math.random().toString(36).slice(2,9),dom:c.dom,titulo,peso,dias:[0,1,2,3,4,5,6]};
   if(c.hora)t.inicio=c.hora;
   S.rotina.push(t);save();refreshAll();
-  const r=RESP[c.dom];
+  const r=(RESP[c.dom]||RESP.metas);
   return {reply:`Feito ✓ Criei a missão “${titulo}” na Trilha ${r.nome} (${r.sub})${c.hora?" às "+c.hora:""}. Pontos do dia redistribuídos (meta: ${metaDia()} XP).`,
     undo:()=>{S.rotina=S.rotina.filter(x=>x.id!==t.id);save();refreshAll();}};
 }
@@ -2680,8 +2681,8 @@ function initIntro(){
 /* ---------- Init ---------- */
 load();migrate();
 if(!S.config.tema)S.config.tema=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
-applyTheme();drawMon();renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();
-initAssistant();initIntro();cloudInit();
+function safe(fn){try{fn();}catch(e){console.error("Kizuna init:",e&&e.message,e);}}
+[applyTheme,drawMon,renderHero,renderHydro,renderProvasHoje,renderDaySel,renderToday,renderReminder,renderAgenda,initAssistant,initIntro,cloudInit].forEach(safe);
 setTimeout(()=>{try{autoLimpeza();}catch(e){}},5000); // espera a nuvem conectar p/ apagar também do Storage
 $("#linnTop").onclick=()=>{scrollTo({top:0,behavior:"smooth"});};
 window.addEventListener("scroll",checkLinnTop,{passive:true});
