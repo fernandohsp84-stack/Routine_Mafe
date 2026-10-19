@@ -113,6 +113,8 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
   background:linear-gradient(135deg,rgba(232,99,43,.16),rgba(232,99,43,.04));border:1px solid rgba(232,99,43,.28)}
 .reminder .rt{font-weight:800}
 .reminder .who{font-size:12px;color:var(--ink-2)}
+.reminder.now{background:linear-gradient(135deg,rgba(232,99,43,.26),rgba(232,99,43,.08));border-color:var(--ember);box-shadow:0 3px 14px rgba(242,116,60,.18)}
+.reminder.now .pill{background:var(--ember);color:#fff;border-color:transparent}
 
 /* SELETOR DE DIAS */
 .weekbar{display:flex;align-items:center;gap:6px;margin:18px 2px 2px}
@@ -273,7 +275,14 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .tl-item.done .tl-card .ti2{text-decoration:line-through;color:var(--ink-3)}
 .tl-item.done .chk{background:var(--leaf);border-color:var(--leaf);color:#12240a}
 .tl-card .pts2{font-size:12px;font-weight:800;color:var(--thunder);white-space:nowrap}
-.now-badge{font-size:9.5px;font-weight:800;color:#fff;background:var(--ember);padding:2px 6px;border-radius:999px;position:absolute;top:8px;right:10px}
+.now-badge{font-size:9.5px;font-weight:800;color:#fff;background:var(--ember);padding:2px 6px;border-radius:999px;position:absolute;top:8px;right:10px;box-shadow:0 2px 7px rgba(242,116,60,.35)}
+.next-badge{font-size:9.5px;font-weight:800;color:#fff;background:var(--water);padding:2px 6px;border-radius:999px;position:absolute;top:8px;right:10px}
+.tl-item.now .tl-card{box-shadow:0 3px 14px rgba(242,116,60,.16)}
+.tl-item.next .tl-dot{border-color:var(--water);box-shadow:0 0 0 4px rgba(79,176,214,.18)}
+.tl-item.next .tl-card{border-color:var(--water);background:linear-gradient(135deg,rgba(79,176,214,.09),transparent)}
+.tl-item.late .tl-dot{border-color:var(--sakura)}
+.tl-item.late .tl-time b{color:var(--sakura)}
+.late-tag{color:var(--sakura);font-weight:800}
 .tl-free{margin-top:8px}
 
 /* TREINO */
@@ -1159,23 +1168,25 @@ function renderReminder(){
   S.rotina.forEach(t=>{
     if(!taskOnDay(t,wd)||taskState(t.id,tk)!=="none")return;
     const ini=tStart(t);
-    if(ini){comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:ini,min:hm2min(ini),tag:"Próxima tarefa"});}
-    else semHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:"",tag:"Próxima tarefa"});
+    if(ini){comHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:ini,min:hm2min(ini),fim:tEnd(t)?hm2min(tEnd(t)):null,ev:false});}
+    else semHora.push({icon:RESP[t.dom].icon,titulo:t.titulo,hora:""});
   });
   (S.agenda||[]).forEach(e=>{if(e.data===tk&&e.hora){const[h,m]=e.hora.split(":").map(Number);
-    comHora.push({icon:(RESP[e.dom]||RESP.terapias).icon,titulo:e.titulo,hora:e.hora,min:h*60+m,tag:"Compromisso"});}});
-  let nx=null;
-  if(comHora.length){comHora.sort((a,b)=>a.min-b.min); nx=comHora.find(x=>x.min>=cur)||comHora[0];}
-  else if(semHora.length){nx=semHora[0];}
+    comHora.push({icon:(RESP[e.dom]||RESP.terapias).icon,titulo:e.titulo,hora:e.hora,min:h*60+m,fim:null,ev:true});}});
+  comHora.sort((a,b)=>a.min-b.min);
+  let nx=null, agora=false;
+  nx=comHora.find(x=>cur>=x.min && cur<(x.fim!=null?x.fim:x.min+60));   // acontecendo agora
+  if(nx){agora=true;} else { nx=comHora.find(x=>x.min>cur) || comHora[0] || semHora[0] || null; }
   if(!nx){ // tudo concluído hoje
     slot.innerHTML=`<div class="reminder"><span style="font-size:20px">🍋</span>
       <div style="flex:1"><div class="rt">Tudo em dia!</div><div class="who">Nenhuma tarefa pendente hoje</div></div></div>`;
     return;
   }
-  slot.innerHTML=`<div class="reminder"><span style="font-size:20px">${nx.icon}</span>
+  const tag = agora?"Acontecendo agora":nx.ev?"Compromisso":nx.hora?"Próxima tarefa":"A fazer";
+  slot.innerHTML=`<div class="reminder${agora?" now":""}"><span style="font-size:20px">${nx.icon}</span>
     <div style="flex:1"><div class="rt">${escapeHtml(nx.titulo)}</div>
-      <div class="who">${nx.tag}${nx.hora?" · "+nx.hora:""}</div></div>
-    ${nx.hora?`<span class="pill">${nx.hora}</span>`:`<span class="pill">a fazer</span>`}</div>`;
+      <div class="who">${tag}${nx.hora?" · "+nx.hora:""}</div></div>
+    <span class="pill">${agora?"agora":nx.hora?nx.hora:"a fazer"}</span></div>`;
 }
 
 /* ---------- Render: AGENDA ---------- */
@@ -1267,19 +1278,32 @@ function renderToday(){
   const semH=tasks.filter(t=>!tStart(t));
   const nowMin=(new Date()).getHours()*60+(new Date()).getMinutes();
 
+  // destaca AGORA (em andamento) e PRÓXIMA (próxima a começar) — só no dia de hoje
+  let agoraId=null, proximaId=null;
+  if(hoje){
+    comH.forEach(t=>{ if(agoraId||taskState(t.id,dk)!=="none")return;
+      const s=hm2min(tStart(t)); if(s==null)return; const f=tEnd(t)?hm2min(tEnd(t)):s+60;
+      if(nowMin>=s && nowMin<f) agoraId=t.id; });
+    const up=comH.find(t=>t.id!==agoraId && taskState(t.id,dk)==="none" && hm2min(tStart(t))!=null && hm2min(tStart(t))>nowMin);
+    if(up) proximaId=up.id;
+    else if(!agoraId){ const f=comH.find(t=>taskState(t.id,dk)==="none"); if(f) proximaId=f.id; }
+  }
+
   const tl=document.createElement("div");tl.className="tl";
   comH.forEach(t=>{
     const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=RESP[t.dom];
     const ini=tStart(t), fim=tEnd(t);
-    const emAndamento = hoje && hm2min(ini)!=null && nowMin>=hm2min(ini) && (fim? nowMin<hm2min(fim): nowMin<hm2min(ini)+60) && st==="none";
-    const it=document.createElement("div");it.className="tl-item"+(done?" done":"")+(pend?" pend":"")+(emAndamento?" now":"");
+    const isNow=t.id===agoraId, isNext=t.id===proximaId;
+    const late = hoje && st==="none" && !isNow && !isNext && fim && hm2min(fim)!=null && nowMin>=hm2min(fim);
+    const it=document.createElement("div");
+    it.className="tl-item"+(done?" done":"")+(pend?" pend":"")+(isNow?" now":"")+(isNext?" next":"")+(late?" late":"");
     if(!hoje)it.style.opacity=".82";
     it.innerHTML=`<div class="tl-time"><b>${ini}</b>${fim?`<small>${fim}</small>`:""}</div>
       <div class="tl-rail"><span class="tl-dot"></span></div>
       <div class="tl-card">
-        ${emAndamento?`<span class="now-badge">AGORA</span>`:""}
+        ${isNow?`<span class="now-badge">AGORA</span>`:isNext?`<span class="next-badge">PRÓXIMA</span>`:""}
         <div class="tci" style="background:color-mix(in srgb,${r.cor} 22%,transparent);color:${r.cor}">${r.icon}</div>
-        <div class="tct"><div class="ti2">${escapeHtml(t.titulo)}</div><div class="sb">${pend?"aguardando confirmação ⏳":r.sub}</div></div>
+        <div class="tct"><div class="ti2">${escapeHtml(t.titulo)}</div><div class="sb">${pend?"aguardando confirmação ⏳":late?`<span class="late-tag">atrasada</span> · ${r.sub}`:r.sub}</div></div>
         <span class="pts2">+${mp[t.id]||0}</span>
         ${hoje?`<button class="tl-cam" title="Enviar comprovação">📎</button>`:""}
         <div class="chk">${done?"✓":pend?"⏳":""}</div>
@@ -1294,7 +1318,7 @@ function renderToday(){
 
   if(semH.length){
     const sub=document.createElement("div");sub.className="section-title tl-free";sub.style.marginTop="18px";
-    sub.textContent="Sem horário definido";box.appendChild(sub);
+    sub.textContent="A qualquer hora do dia";box.appendChild(sub);
     const grp=document.createElement("div");grp.className="group";
     semH.forEach(t=>{
       const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=RESP[t.dom];
