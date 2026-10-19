@@ -54,8 +54,9 @@ header.top{display:flex;align-items:center;justify-content:space-between;padding
 .iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);
   color:var(--ink);font-size:17px;display:grid;place-items:center;cursor:pointer}
 .iconbtn:active{transform:scale(.94)}
-.syncdot{font-size:14px;line-height:1;color:var(--ink-3);min-width:16px;text-align:center}
-.syncdot.on{color:var(--leaf)}
+.syncdot{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;line-height:1;
+  color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 9px;white-space:nowrap}
+.syncdot.on{color:var(--leaf);border-color:color-mix(in srgb,var(--leaf) 45%,transparent);background:color-mix(in srgb,var(--leaf) 12%,transparent)}
 .syncdot.off{color:var(--ink-3)}
 
 /* generic */
@@ -442,33 +443,39 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
 @keyframes ping{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.55);opacity:0}}
 @media(min-width:521px){.fab{right:calc(50% - 260px + 16px)}}
 
-.assist{position:fixed;inset:0;z-index:75;background:rgba(10,4,22,.55);display:none;align-items:flex-end}
-.assist.open{display:flex;animation:fade .2s}
-.assist .panel{background:var(--night-2);width:100%;max-width:520px;margin:0 auto;height:86vh;border-radius:24px 24px 0 0;
+.assist{position:fixed;inset:0;z-index:75;background:var(--night);display:none}
+.assist.open{display:block;animation:fade .2s}
+.assist .panel{background:var(--night-2);width:100%;max-width:520px;margin:0 auto;height:100%;
   display:flex;flex-direction:column;overflow:hidden;animation:up .3s cubic-bezier(.2,.9,.3,1)}
-.ahead{display:flex;align-items:center;gap:11px;padding:15px 15px 12px;border-bottom:1px solid var(--line)}
-.crow{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#4a1233,#20081c);display:grid;place-items:center;font-size:22px;flex:none;box-shadow:0 0 0 2px var(--line-strong)}
-.ahead .nm{font-weight:800;font-size:16px}
-.ahead .st{font-size:11.5px;color:var(--wind);font-weight:700}
+.ahead{display:flex;align-items:center;gap:11px;padding:calc(13px + env(safe-area-inset-top,0px)) 15px 13px;border-bottom:1px solid var(--line)}
+.crow{width:44px;height:44px;border-radius:50%;background:conic-gradient(from 210deg,#ffd84d,#8cc84c,#4fb0d6,#e8632b,#ffd84d);
+  display:grid;place-items:center;font-size:22px;flex:none;box-shadow:0 2px 10px rgba(232,99,43,.25)}
+.ahead .ahd-txt{line-height:1.25}
+.ahead .nm{font-weight:800;font-size:17px}
+.ahead .st{font-size:12px;color:var(--ink-3);font-weight:700}
 .ahead .sp{flex:1}
-.chatlog{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chatlog{flex:1;overflow-y:auto;padding:18px 16px 8px;display:flex;flex-direction:column;gap:11px}
+.hello{font-size:17px;line-height:1.5;color:var(--ink);font-weight:500;display:flex;flex-direction:column;gap:14px;padding:4px 2px 6px}
+.hello b{font-weight:800;color:var(--ink)}
 .bub{max-width:84%;padding:11px 14px;border-radius:16px;font-size:14.5px;line-height:1.4;white-space:pre-wrap}
-.bub.a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px;font-weight:500}
+.bub.a{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:5px;font-weight:500}
 .bub.u{align-self:flex-end;background:linear-gradient(135deg,var(--ember),#ff7a4d);color:#fff;border-bottom-right-radius:5px;font-weight:600}
 .bub .undo{display:inline-block;margin-top:9px;font-size:12.5px;font-weight:800;color:var(--ember);cursor:pointer;
-  background:var(--surface-2);padding:6px 12px;border-radius:999px}
-.sugs{display:flex;gap:8px;overflow-x:auto;padding:9px 15px;border-top:1px solid var(--line);scrollbar-width:none}
+  background:var(--surface);padding:6px 12px;border-radius:999px}
+.sugs{display:flex;gap:8px;overflow-x:auto;padding:9px 15px 4px;scrollbar-width:none}
 .sugs::-webkit-scrollbar{display:none}
-.sugs .s{white-space:nowrap;font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:999px;background:var(--surface-2);
+.sugs .s{white-space:nowrap;font-size:12.5px;font-weight:700;padding:9px 14px;border-radius:999px;background:var(--surface-2);
   border:1px solid var(--line);cursor:pointer;color:var(--ink-2);flex:none}
-.abar{display:flex;align-items:center;gap:9px;padding:10px 13px calc(14px + var(--safe-b));border-top:1px solid var(--line)}
-.abar input{flex:1}
-.mic,.send{width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;flex:none;font-size:18px}
-.mic{background:var(--surface-2);color:var(--ink)}
-.mic.live{background:var(--ember);color:#fff;animation:pulse 1s infinite}
+.acomp{padding:10px 13px calc(14px + var(--safe-b));border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.inrow{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:999px;padding:5px 5px 5px 6px}
+.inrow input{flex:1;border:none;background:transparent;padding:9px 8px}
+.inrow input:focus{outline:none}
+.actrow{display:flex;gap:9px;padding:0 4px}
+.mo{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:19px;cursor:pointer;flex:none}
+.mo.live{background:var(--ember);color:#fff;border-color:transparent;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,90,54,.5)}50%{box-shadow:0 0 0 11px rgba(255,90,54,0)}}
-.send{background:linear-gradient(135deg,var(--ember),#ff7a4d);color:#fff}
-.abar button:active{transform:scale(.93)}
+.send{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;flex:none;font-size:18px;background:linear-gradient(135deg,var(--ember),#ff7a4d);color:#fff}
+.acomp button:active{transform:scale(.93)}
 </style>
 </head>
 <body>
@@ -479,7 +486,7 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
       <div><h1>Kizuna</h1><small id="brandSub">O Pomar do Linn</small></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <span class="syncdot" id="syncDot" title="Sincronização"></span>
+      <span class="syncdot off" id="syncDot" title="Sincronização entre aparelhos">☁︎ local</span>
       <button class="iconbtn" id="helpBtn" title="Ver introdução" aria-label="Ver introdução">?</button>
       <button class="iconbtn" id="themeBtn" title="Tema" aria-label="Alternar tema">☀</button>
     </div>
@@ -660,17 +667,22 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
   <div class="panel">
     <div class="ahead">
       <div class="crow">🐦‍⬛</div>
-      <div><div class="nm">KizAI</div><div class="st" id="assistSt">corvo mensageiro · pronto</div></div>
+      <div class="ahd-txt"><div class="nm">KizAI</div><div class="st" id="assistSt">pode falar do seu jeito</div></div>
       <div class="sp"></div>
       <button class="iconbtn" id="assistVoz" title="Voz" aria-label="Alternar voz">🔊</button>
       <button class="iconbtn" id="assistClose" aria-label="Fechar">✕</button>
     </div>
     <div class="chatlog" id="chatlog"></div>
     <div class="sugs" id="sugs"></div>
-    <div class="abar">
-      <button class="mic" id="micBtn" aria-label="Falar">🎤</button>
-      <input id="assistInput" placeholder="Fale ou escreva um pedido…" autocomplete="off">
-      <button class="send" id="sendBtn" aria-label="Enviar">➤</button>
+    <div class="acomp">
+      <div class="inrow">
+        <input id="assistInput" placeholder="Peça, anexe ou mande um áudio…" autocomplete="off">
+        <button class="send" id="sendBtn" aria-label="Enviar">➤</button>
+      </div>
+      <div class="actrow">
+        <button class="mo" id="attachBtn" title="Anexar comprovação" aria-label="Anexar">📎</button>
+        <button class="mo" id="micBtn" title="Falar" aria-label="Falar">🎤</button>
+      </div>
     </div>
   </div>
 </div>
@@ -694,15 +706,16 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
    100% local (sem sincronização).
    ====================================================================== */
 const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyBEWogWqnL5sYmzQwTaQ7kPjNFpEVNH-Ao",
+  authDomain: "kizuna-mafe.firebaseapp.com",
+  databaseURL: "https://kizuna-mafe-default-rtdb.firebaseio.com",
+  projectId: "kizuna-mafe",
+  storageBucket: "kizuna-mafe.firebasestorage.app",
+  messagingSenderId: "267230154994",
+  appId: "1:267230154994:web:417eda3bb9bbd98b70806b",
+  measurementId: "G-FN3E9YWK3D"
 };
-const FAMILIA_ID = "mafe";
+const FAMILIA_ID = "mafe-7f3k9q2x";
 
 /* ---------- Constantes de tema ---------- */
 const RESP = {
@@ -803,8 +816,8 @@ function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} clo
 let FB=null, FBDB=null, FBST=null, cloudReady=false, applyingRemote=false, lastRev=0, pushTimer=null;
 function setSyncBadge(txt,cls){const b=$("#syncDot");if(!b)return;b.textContent=txt;b.className="syncdot "+(cls||"");}
 function cloudStart(){
-  if(cloudReady)return; cloudReady=true; setSyncBadge("☁︎","on");
-  FBDB.ref(".info/connected").on("value",s=>{ setSyncBadge(s.val()?"☁︎":"☁︎⃠", s.val()?"on":"off"); });
+  if(cloudReady)return; cloudReady=true; setSyncBadge("☁︎ na nuvem","on");
+  FBDB.ref(".info/connected").on("value",s=>{ setSyncBadge(s.val()?"☁︎ na nuvem":"☁︎ offline", s.val()?"on":"off"); });
   FBDB.ref("familias/"+FAMILIA_ID).on("value",snap=>{
     const v=snap.val();
     if(!v){ cloudPush(true); return; }        // nuvem vazia → envia o estado local
@@ -814,14 +827,14 @@ function cloudStart(){
   });
 }
 function cloudInit(){
-  if(!FIREBASE_CONFIG.apiKey || !window.firebase){ return; } // sem config ou sem internet → só local
+  if(!FIREBASE_CONFIG.apiKey || !window.firebase){ setSyncBadge("☁︎ local","off"); return; } // sem config ou sem internet → só local
   try{
     FB=firebase.initializeApp(FIREBASE_CONFIG);
     FBDB=firebase.database(); FBST=firebase.storage();
-    setSyncBadge("☁︎…","off");
+    setSyncBadge("☁︎ ligando…","off");
     firebase.auth().onAuthStateChanged(user=>{ if(user) cloudStart(); });
-    firebase.auth().signInAnonymously().catch(()=>setSyncBadge("☁︎⃠","off")); // login anônimo (dados só com auth)
-  }catch(e){ cloudReady=false; setSyncBadge("☁︎⃠","off"); }
+    firebase.auth().signInAnonymously().catch(()=>setSyncBadge("☁︎ offline","off")); // login anônimo (dados só com auth)
+  }catch(e){ cloudReady=false; setSyncBadge("☁︎ offline","off"); }
 }
 function applyRemote(data){
   applyingRemote=true;
@@ -2557,8 +2570,12 @@ function renderSugs(){const w=$("#sugs");w.innerHTML="";SUGS.forEach(s=>{const e
 function openAssist(greet){
   $("#assist").classList.add("open");
   if(greet && !$("#chatlog").childElementCount){
-    addBubble("Caw! 🐦‍⬛ Sou o KizAI, mensageiro do pomar do Linn. É só falar ou escrever — eu cuido do resto: crio missões, agendo compromissos, marco a meta do dia, registro treinos, água ou guardo dinheiro no tesouro.","a");
-    speak("Olá! Sou o KizAI. É só falar o que você precisa.");
+    const h=document.createElement("div");h.className="hello";
+    h.innerHTML=`<p>Oi! Sou o <b>KizAI</b>, o mensageiro do pomar do Linn. 🐦‍⬛</p>`+
+      `<p>Fala do seu jeito — <b>"inclui a missão de guardar os brinquedos 19h"</b>, <b>"corri 20 minutos"</b>, <b>"marca a meta do dia"</b>, <b>"agenda a terapia quinta 14h"</b>.</p>`+
+      `<p>Eu crio missões, agendo compromissos, registro treinos e água e guardo moedas no tesouro. 🍋</p>`;
+    $("#chatlog").appendChild(h);
+    speak("Oi! Sou o KizAI. É só falar o que você precisa.");
   }
   setTimeout(()=>$("#assistInput").focus(),200);
 }
@@ -2577,6 +2594,7 @@ function initAssistant(){
   renderSugs();initMic();
   $("#assistFab").onclick=()=>openAssist(true);
   $("#assistClose").onclick=closeAssist;
+  const atb=$("#attachBtn");if(atb)atb.onclick=()=>addBubble("Para anexar foto, vídeo ou áudio de uma missão, toque no clipinho 📎 da tarefa na tela Hoje — aí a comprovação vai para o papai/mamãe conferir. 🍋","a");
   $("#sendBtn").onclick=()=>assistSend($("#assistInput").value);
   $("#assistInput").addEventListener("keydown",e=>{if(e.key==="Enter")assistSend($("#assistInput").value);});
   $("#assistVoz").textContent=S.config.voz?"🔊":"🔇";
@@ -2647,7 +2665,7 @@ updateLinnTop(linnMood());
 setInterval(checkReminders,30000);
 window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();} });
 if(!S.config.introVista){ setTimeout(openIntro,400); }
-else { try{ if(!sessionStorage.getItem("kiz_greeted")){ sessionStorage.setItem("kiz_greeted","1"); setTimeout(()=>openAssist(true),650); } }catch(e){} }
+// KizAI abre somente ao tocar no botão 🐦‍⬛ (sem abertura automática)
 </script>
 </body>
 </html>
