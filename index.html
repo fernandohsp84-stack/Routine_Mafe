@@ -215,6 +215,7 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .proof-btn{border:none;background:var(--surface-2);color:var(--ink-2);border-radius:999px;font-size:13px;font-weight:800;
   padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .tl-cam{border:none;background:transparent;font-size:15px;cursor:pointer;color:var(--ink-3);padding:4px;flex:none}
+.tl-hora{border:none;background:var(--surface-2);font-size:14px;cursor:pointer;color:var(--ink-2);padding:5px 8px;border-radius:999px;flex:none}
 .media-opts{display:flex;gap:9px;margin-top:6px}
 .media-opts .mo{flex:1;border:1px solid var(--line-strong);background:var(--night-2);border-radius:var(--r-sm);
   padding:14px 6px;text-align:center;font-weight:800;font-size:13px;cursor:pointer}
@@ -767,23 +768,31 @@ function mondayOf(off){const d=new Date();d.setHours(0,0,0,0);
 
 /* ---------- Estado ---------- */
 const KEY="kizuna_state_v1";
+/* Agenda padrão de dias úteis (Seg–Sex), horários sequenciados — usada no 1º uso e no botão "Aplicar agenda padrão" do Guardião */
+function agendaPadraoUteis(){
+  const uid=()=>Math.random().toString(36).slice(2,9);
+  const U=[1,2,3,4,5];
+  return [
+    {id:uid(),dom:"remedios",titulo:"Remédio da manhã",peso:10,inicio:"07:00",fim:"07:10",dias:U},
+    {id:uid(),dom:"mochila",titulo:"Preparar a mochila da escola",peso:12,inicio:"07:10",fim:"07:30",dias:U},
+    {id:uid(),dom:"alimentacao",titulo:"Lanche saudável depois da aula",peso:12,inicio:"16:30",fim:"17:00",dias:U},
+    {id:uid(),dom:"metas",titulo:"Chegar em casa e descansar",peso:8,inicio:"17:00",fim:"17:30",dias:U},
+    {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:25,inicio:"17:30",fim:"18:30",dias:U},
+    {id:uid(),dom:"estudos",titulo:"Ler 15 minutos",peso:12,inicio:"18:30",fim:"18:45",dias:U},
+    {id:uid(),dom:"esporte",titulo:"Atividade física (30 min)",peso:18,inicio:"18:45",fim:"19:15",dias:U},
+    {id:uid(),dom:"metas",titulo:"Arrumar o quarto",peso:10,inicio:"19:15",fim:"19:30",dias:U},
+    {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",peso:12,inicio:"19:30",fim:"19:45",dias:U},
+    {id:uid(),dom:"estudos",titulo:"Revisar o dia / estudar",peso:15,inicio:"20:00",fim:"20:30",dias:U},
+    {id:uid(),dom:"terapias",titulo:"Ir à terapia",peso:20,inicio:"14:00",fim:"15:00",dias:[2,4]},
+  ];
+}
 function seed(){
   const uid=()=>Math.random().toString(36).slice(2,9);
   return {
     version:1,
     profile:{nome:"Linn", xp:0, moedas:0},
     config:{pin:"1234", tema:"light", hidratacaoMeta:6, notif:false, voz:true, metaDia:100},
-    rotina:[
-      {id:uid(),dom:"remedios",titulo:"Remédio da manhã",peso:10,inicio:"07:00",fim:"07:10",dias:[1,2,3,4,5]},
-      {id:uid(),dom:"mochila",titulo:"Preparar a mochila da escola",peso:15,inicio:"07:10",fim:"07:30",dias:[1,2,3,4,5]},
-      {id:uid(),dom:"alimentacao",titulo:"Lanche saudável depois da aula",peso:15,inicio:"16:30",fim:"17:00",dias:[1,2,3,4,5]},
-      {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:25,inicio:"17:30",fim:"18:30",dias:[1,2,3,4,5]},
-      {id:uid(),dom:"estudos",titulo:"Ler 15 minutos",peso:15,inicio:"18:30",fim:"18:45",dias:[1,2,3,4,5]},
-      {id:uid(),dom:"esporte",titulo:"Atividade física (30 min)",peso:20,inicio:"18:45",fim:"19:15"},
-      {id:uid(),dom:"metas",titulo:"Arrumar o quarto",peso:10,inicio:"19:15",fim:"19:30"},
-      {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",peso:15,inicio:"19:30",fim:"19:45"},
-      {id:uid(),dom:"terapias",titulo:"Ir à terapia",peso:20,inicio:"14:00",fim:"15:00",dias:[2,4]},
-    ],
+    rotina:agendaPadraoUteis(),
     completions:{},
     hidratacao:{},
     streak:{atual:0, melhor:0, ultimoDia:null},
@@ -1319,6 +1328,9 @@ function renderToday(){
   if(semH.length){
     const sub=document.createElement("div");sub.className="section-title tl-free";sub.style.marginTop="18px";
     sub.textContent="A qualquer hora do dia";box.appendChild(sub);
+    const hint=document.createElement("div");hint.className="muted";hint.style.cssText="font-size:11.5px;font-weight:600;margin:0 6px 8px";
+    hint.textContent="Toque em ⏰ para dar um horário e colocar a missão no cronograma de cima.";
+    box.appendChild(hint);
     const grp=document.createElement("div");grp.className="group";
     semH.forEach(t=>{
       const st=taskState(t.id,dk);const done=st==="ok",pend=st==="pend";const r=(RESP[t.dom]||RESP.metas);
@@ -1328,10 +1340,12 @@ function renderToday(){
         <div style="width:26px;text-align:center">${r.icon}</div>
         <div class="txt">${escapeHtml(t.titulo)}${pend?` <span class="muted" style="font-size:11px;font-weight:700">· aguardando</span>`:""}</div>
         <span class="xpwin">+${mp[t.id]||0}</span>
+        <button class="tl-hora" title="Definir horário">⏰</button>
         ${hoje?`<button class="tl-cam" title="Enviar comprovação">📎</button>`:""}`;
-      row.onclick=(e)=>{ if(e.target.closest(".tl-cam"))return;
+      row.onclick=(e)=>{ if(e.target.closest(".tl-cam")||e.target.closest(".tl-hora"))return;
         hoje ? toggleTask(t,row) : toast("Planejamento de "+DIAS_LONGO[wd]+" — concluir só no próprio dia."); };
       const cam=row.querySelector(".tl-cam");if(cam)cam.onclick=e=>{e.stopPropagation();sheetComprovar(t);};
+      const hr=row.querySelector(".tl-hora");if(hr)hr.onclick=e=>{e.stopPropagation();sheetTask(t);};
       grp.appendChild(row);
     });
     box.appendChild(grp);
@@ -1931,6 +1945,7 @@ function renderPais(){
        <button class="btn ghost" id="impBtn" style="width:auto;flex:1">Importar</button>
      </div>
      <button class="btn ghost" id="notifBtn" style="margin-top:9px">🔔 Ativar lembretes</button>
+     <button class="btn ghost" id="aplicarAgendaBtn" style="margin-top:9px">📅 Aplicar agenda padrão (dias úteis)</button>
      <button class="btn ghost" id="introBtn" style="margin-top:9px">🎬 Ver introdução das trilhas</button>
      <button class="btn" id="resetBtn" style="margin-top:9px;color:var(--ember)">Apagar tudo e recomeçar</button>
    </div>
@@ -2059,6 +2074,12 @@ function renderPais(){
   $("#impFile").onchange=importBackup;
   $("#notifBtn").onclick=askNotif;
   $("#introBtn").onclick=()=>openIntro();
+  $("#aplicarAgendaBtn").onclick=()=>{
+    if(confirm("Substituir a lista de missões pela AGENDA PADRÃO de dias úteis (Seg–Sex), com horários sequenciados?\n\nSeus pontos, moedas, tesouro e histórico são mantidos — só a lista de missões é trocada. Você pode ajustar cada horário depois.")){
+      S.rotina=agendaPadraoUteis();save();try{if(cloudReady)cloudPush(true);}catch(e){}
+      renderPais();renderToday();renderReminder();renderAgenda();
+      toast("Agenda padrão aplicada 📅 — enviada à nuvem; ajuste quando quiser");
+    }};
   $("#resetBtn").onclick=()=>{if(confirm("Apagar todos os dados e recomeçar do zero?")){S=seed();save();location.reload();}};
 }
 
