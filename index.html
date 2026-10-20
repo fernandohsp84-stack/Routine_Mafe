@@ -481,8 +481,8 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
 .inrow input{flex:1;border:none;background:transparent;padding:9px 8px}
 .inrow input:focus{outline:none}
 .actrow{display:flex;gap:9px;padding:0 4px}
-.mo{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:19px;cursor:pointer;flex:none}
-.mo.live{background:var(--ember);color:#fff;border-color:transparent;animation:pulse 1s infinite}
+.aact{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:19px;cursor:pointer;flex:none}
+.aact.live{background:var(--ember);color:#fff;border-color:transparent;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,90,54,.5)}50%{box-shadow:0 0 0 11px rgba(255,90,54,0)}}
 .send{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;flex:none;font-size:18px;background:linear-gradient(135deg,var(--ember),#ff7a4d);color:#fff}
 .acomp button:active{transform:scale(.93)}
@@ -690,8 +690,8 @@ nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
         <button class="send" id="sendBtn" aria-label="Enviar">➤</button>
       </div>
       <div class="actrow">
-        <button class="mo" id="attachBtn" title="Anexar comprovação" aria-label="Anexar">📎</button>
-        <button class="mo" id="micBtn" title="Falar" aria-label="Falar">🎤</button>
+        <button class="aact" id="attachBtn" title="Anexar comprovação" aria-label="Anexar">📎</button>
+        <button class="aact" id="micBtn" title="Falar" aria-label="Falar">🎤</button>
       </div>
     </div>
   </div>
@@ -1433,23 +1433,27 @@ function sheetComprovar(task){
     const id=Math.random().toString(36).slice(2,10);
     const reg={id:Math.random().toString(36).slice(2,9),taskId:task?task.id:null,titulo,
       tipo,mediaId:id,url:"",nota:$("#cpNota").value.trim(),data:todayKey(),ts:Date.now(),status:"pendente"};
-    const finalizar=()=>{
+    let feito=false;
+    const finalizar=(msg)=>{ if(feito)return; feito=true;
       S.comprovacoes.push(reg);
       if(task){const tk=todayKey();S.completions[tk]=S.completions[tk]||{};
         if(taskState(task.id,tk)==="none"){
           if(precisaAprovacao(task))S.completions[tk][task.id]={st:"pend",ts:Date.now()};
           else{marcarFeita(task);renderHero();}   // não escolar: já conta o XP
         }}
-      save();closeSheet();renderToday();toast("Comprovação enviada aos pais 📨");confetti();
+      save();closeSheet();renderToday();toast(msg||"Comprovação enviada aos pais 📨");confetti();
     };
     $("#cpSend").disabled=true;$("#cpSend").textContent="Enviando…";
     idbPut(id,file).catch(()=>{}).then(()=>{
-      if(cloudReady && FBST){ // Opção B: sobe a mídia para a nuvem para os pais verem de qualquer aparelho
+      if(cloudReady && FBST){ // sobe a mídia para a nuvem (se o Storage estiver configurado)
         const ext=(file.name&&file.name.includes("."))?file.name.split(".").pop():(tipo==="foto"?"jpg":tipo==="video"?"mp4":"m4a");
         const path="familias/"+FAMILIA_ID+"/media/"+id+"."+ext;
-        const r=FBST.ref(path);
-        r.put(file).then(()=>r.getDownloadURL()).then(u=>{reg.url=u;reg.path=path;finalizar();})
-          .catch(()=>{toast("Mídia salva neste aparelho (sem nuvem agora)");finalizar();});
+        const timer=setTimeout(()=>finalizar("Comprovação enviada (mídia ficou neste aparelho)"),7000); // Storage não configurado/lento → finaliza local
+        try{
+          const r=FBST.ref(path);
+          r.put(file).then(()=>r.getDownloadURL()).then(u=>{clearTimeout(timer);reg.url=u;reg.path=path;finalizar();})
+            .catch(()=>{clearTimeout(timer);finalizar("Comprovação enviada (mídia ficou neste aparelho)");});
+        }catch(e){ clearTimeout(timer); finalizar("Comprovação enviada (mídia ficou neste aparelho)"); }
       } else { finalizar(); }
     });
   };
@@ -2209,9 +2213,16 @@ function importBackup(e){
 
 /* ---------- Notificações / lembretes ---------- */
 function askNotif(){
-  if(!("Notification" in window)){toast("Sem suporte a notificações");return;}
+  const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent||"");
+  const standalone=(window.navigator.standalone===true)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+  if(!("Notification" in window)){
+    if(isiOS&&!standalone){ toast("No iPhone/iPad: toque em Compartilhar → “Adicionar à Tela de Início” e abra o app por esse ícone. Aí dá para ativar os lembretes (iOS 16.4+)."); }
+    else { toast("Este navegador não envia notificações. Os lembretes aparecem dentro do app enquanto ele estiver aberto."); }
+    return;
+  }
   Notification.requestPermission().then(p=>{S.config.notif=(p==="granted");save();
-    toast(p==="granted"?"Lembretes ativados 🔔":"Permissão negada");});
+    toast(p==="granted"?"Lembretes ativados 🔔":"Permissão negada — você pode liberar nos Ajustes do aparelho.");})
+    .catch(()=>toast("Não consegui pedir permissão de notificação neste navegador."));
 }
 let notifDone={};
 function checkReminders(){
