@@ -843,14 +843,15 @@ function load(){
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} cloudPushSoon(); }
 
 /* ================= Sincronização em nuvem (Firebase, opcional) ================= */
-let FB=null, FBDB=null, FBST=null, cloudReady=false, applyingRemote=false, lastRev=0, pushTimer=null;
+let FB=null, FBDB=null, FBST=null, cloudReady=false, applyingRemote=false, lastRev=0, pushTimer=null, gotSnapshot=false;
 function setSyncBadge(txt,cls){const b=$("#syncDot");if(!b)return;b.textContent=txt;b.className="syncdot "+(cls||"");}
 function cloudStart(){
   if(cloudReady)return; cloudReady=true; setSyncBadge("☁︎ na nuvem","on");
   FBDB.ref(".info/connected").on("value",s=>{ setSyncBadge(s.val()?"☁︎ na nuvem":"☁︎ offline", s.val()?"on":"off"); });
   FBDB.ref("familias/"+FAMILIA_ID).on("value",snap=>{
     const v=snap.val();
-    if(!v){ cloudPush(true); return; }        // nuvem vazia → envia o estado local
+    if(!v){ gotSnapshot=true; cloudPush(true); return; }  // nuvem vazia → envia o estado local (1º aparelho)
+    gotSnapshot=true;                          // já conhecemos a nuvem → agora é seguro gravar
     if(v.rev && v.rev===lastRev) return;       // eco da nossa própria escrita
     if(v.rev && v.rev<lastRev) return;         // mais antigo → ignora
     if(v.data){ lastRev=v.rev||Date.now(); applyRemote(v.data); }
@@ -874,12 +875,13 @@ function applyRemote(data){
 }
 function cloudPush(force){
   if(!cloudReady || (applyingRemote && !force)) return;
+  if(!gotSnapshot && !force) return;   // ainda não recebemos a nuvem → não sobrescreve dados bons
   try{ lastRev=Date.now();
     FBDB.ref("familias/"+FAMILIA_ID).set({rev:lastRev, ts:lastRev, data:S});
   }catch(e){}
 }
 function cloudPushSoon(){
-  if(!cloudReady || applyingRemote) return;
+  if(!cloudReady || applyingRemote || !gotSnapshot) return;
   clearTimeout(pushTimer); pushTimer=setTimeout(()=>cloudPush(false),500);
 }
 
