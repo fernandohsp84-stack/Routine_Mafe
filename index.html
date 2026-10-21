@@ -1866,7 +1866,7 @@ function bindPin(){
     el.value="";
     el.oninput=()=>{el.value=el.value.replace(/\D/g,"").slice(0,1);if(el.value&&i<3)ins[i+1].focus();
       const code=ins.map(x=>x.value).join("");
-      if(code.length===4){ if(code===S.config.pin){paisUnlocked();} else {toast("PIN incorreto");ins.forEach(x=>x.value="");ins[0].focus();} }};
+      if(code.length===4){ const pin=(S.config&&/^\d{4}$/.test(S.config.pin))?S.config.pin:"1234"; if(code===pin){paisUnlocked();} else {toast("PIN incorreto");ins.forEach(x=>x.value="");ins[0].focus();} }};
     el.onkeydown=e=>{if(e.key==="Backspace"&&!el.value&&i>0)ins[i-1].focus();};
   });
 }
@@ -2373,6 +2373,18 @@ $("#depositBtn").onclick=()=>{
 
 /* ========== KizAI — assistente conversacional (agentes 100% no dispositivo) ========== */
 function migrate(){
+  if(!S.config)S.config={};
+  if(!/^\d{4}$/.test(S.config.pin||""))S.config.pin="1234";   // garante PIN válido (default 1234)
+  // blindagem: garante que listas/objetos essenciais existam (evita quebra com estado incompleto)
+  if(!S.profile||typeof S.profile!=="object")S.profile={nome:"Linn",xp:0,moedas:0};
+  if(typeof S.profile.nome!=="string")S.profile.nome="Linn";
+  if(!Array.isArray(S.rotina))S.rotina=[];
+  if(!Array.isArray(S.recompensas))S.recompensas=[];
+  if(!Array.isArray(S.medalhas))S.medalhas=[];
+  if(!S.completions||typeof S.completions!=="object")S.completions={};
+  if(!S.hidratacao||typeof S.hidratacao!=="object")S.hidratacao={};
+  if(!S.streak||typeof S.streak!=="object")S.streak={atual:0,melhor:0,ultimoDia:null};
+  if(!S.poupanca||typeof S.poupanca!=="object")S.poupanca={titulo:"Meu tesouro",meta:100,atual:0,historico:[]};
   if(!S.agenda)S.agenda=[];
   if(!S.linn)S.linn={};
   if(typeof S.config.voz==="undefined")S.config.voz=true;
