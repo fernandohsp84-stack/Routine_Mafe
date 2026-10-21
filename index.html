@@ -769,21 +769,33 @@ function mondayOf(off){const d=new Date();d.setHours(0,0,0,0);
 /* ---------- Estado ---------- */
 const KEY="kizuna_state_v1";
 /* Agenda padrão de dias úteis (Seg–Sex), horários sequenciados — usada no 1º uso e no botão "Aplicar agenda padrão" do Guardião */
+/* Rotina real da Mafê — dias e horários informados pelo Fernando (ajustável no Guardião) */
 function agendaPadraoUteis(){
   const uid=()=>Math.random().toString(36).slice(2,9);
-  const U=[1,2,3,4,5];
+  const TODOS=[0,1,2,3,4,5,6];
   return [
-    {id:uid(),dom:"remedios",titulo:"Remédio da manhã",peso:10,inicio:"07:00",fim:"07:10",dias:U},
-    {id:uid(),dom:"mochila",titulo:"Preparar a mochila da escola",peso:12,inicio:"07:10",fim:"07:30",dias:U},
-    {id:uid(),dom:"alimentacao",titulo:"Lanche saudável depois da aula",peso:12,inicio:"16:30",fim:"17:00",dias:U},
-    {id:uid(),dom:"metas",titulo:"Chegar em casa e descansar",peso:8,inicio:"17:00",fim:"17:30",dias:U},
-    {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:25,inicio:"17:30",fim:"18:30",dias:U},
-    {id:uid(),dom:"estudos",titulo:"Ler 15 minutos",peso:12,inicio:"18:30",fim:"18:45",dias:U},
-    {id:uid(),dom:"esporte",titulo:"Atividade física (30 min)",peso:18,inicio:"18:45",fim:"19:15",dias:U},
-    {id:uid(),dom:"metas",titulo:"Arrumar o quarto",peso:10,inicio:"19:15",fim:"19:30",dias:U},
-    {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",peso:12,inicio:"19:30",fim:"19:45",dias:U},
-    {id:uid(),dom:"estudos",titulo:"Revisar o dia / estudar",peso:15,inicio:"20:00",fim:"20:30",dias:U},
-    {id:uid(),dom:"terapias",titulo:"Ir à terapia",peso:20,inicio:"14:00",fim:"15:00",dias:[2,4]},
+    // Manhã (Seg–Sex) — sai de casa 07:00
+    {id:uid(),dom:"mochila",titulo:"Preparar a mochila e sair para a escola",peso:10,inicio:"06:40",fim:"07:00",dias:[1,2,3,4,5]},
+    // Lição de casa (horário varia por dia)
+    {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:20,inicio:"17:00",fim:"17:30",dias:[1]},
+    {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:20,inicio:"17:30",fim:"18:00",dias:[3]},   // Qua: depois da Psicóloga
+    {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:20,inicio:"18:30",fim:"19:00",dias:[2,4]},
+    {id:uid(),dom:"estudos",titulo:"Fazer a lição de casa",peso:20,inicio:"15:00",fim:"16:00",dias:[5]},
+    // Terapias no Integra
+    {id:uid(),dom:"terapias",titulo:"Psicóloga (Integra)",peso:16,inicio:"16:20",fim:"17:20",dias:[3]},
+    {id:uid(),dom:"terapias",titulo:"Fonoaudiologia (Integra)",peso:16,inicio:"16:20",fim:"17:00",dias:[5]},
+    {id:uid(),dom:"terapias",titulo:"Terapia Ocupacional (Integra)",peso:16,inicio:"17:10",fim:"18:00",dias:[5]},
+    {id:uid(),dom:"terapias",titulo:"Psicóloga",peso:16,inicio:"10:00",fim:"11:00",dias:[6]},
+    // Treino no Dojô (jogos de memória) — segunda e sábado (removido de quarta e sexta)
+    {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",peso:12,inicio:"17:45",fim:"18:15",dias:[1]},
+    {id:uid(),dom:"memoria",titulo:"Um treino no Dojô",peso:12,inicio:"14:00",fim:"15:00",dias:[6]},
+    // Arrumar o quarto (sábado)
+    {id:uid(),dom:"metas",titulo:"Arrumar o quarto",peso:10,inicio:"09:00",fim:"09:30",dias:[6]},
+    // Rotina de casa — todos os dias
+    {id:uid(),dom:"esporte",titulo:"Atividade física",peso:16,inicio:"19:00",fim:"20:00",dias:TODOS},
+    {id:uid(),dom:"alimentacao",titulo:"Jantar",peso:8,inicio:"20:00",fim:"20:30",dias:TODOS},
+    {id:uid(),dom:"metas",titulo:"Tomar banho",peso:8,inicio:"20:30",fim:"21:00",dias:TODOS},
+    {id:uid(),dom:"estudos",titulo:"Leitura (15–30 min)",peso:10,inicio:"21:00",fim:"21:30",dias:TODOS},
   ];
 }
 function seed(){
@@ -1949,7 +1961,7 @@ function renderPais(){
        <button class="btn ghost" id="impBtn" style="width:auto;flex:1">Importar</button>
      </div>
      <button class="btn ghost" id="notifBtn" style="margin-top:9px">🔔 Ativar lembretes</button>
-     <button class="btn ghost" id="aplicarAgendaBtn" style="margin-top:9px">📅 Aplicar agenda padrão (dias úteis)</button>
+     <button class="btn ghost" id="aplicarAgendaBtn" style="margin-top:9px">📅 Aplicar rotina da Mafê</button>
      <button class="btn ghost" id="introBtn" style="margin-top:9px">🎬 Ver introdução das trilhas</button>
      <button class="btn" id="resetBtn" style="margin-top:9px;color:var(--ember)">Apagar tudo e recomeçar</button>
    </div>
@@ -2079,7 +2091,7 @@ function renderPais(){
   $("#notifBtn").onclick=askNotif;
   $("#introBtn").onclick=()=>openIntro();
   $("#aplicarAgendaBtn").onclick=()=>{
-    if(confirm("Substituir a lista de missões pela AGENDA PADRÃO de dias úteis (Seg–Sex), com horários sequenciados?\n\nSeus pontos, moedas, tesouro e histórico são mantidos — só a lista de missões é trocada. Você pode ajustar cada horário depois.")){
+    if(confirm("Substituir a lista de missões pela ROTINA DA MAFÊ (dias e horários reais, Seg a Dom)?\n\nSeus pontos, moedas, tesouro e histórico são mantidos — só a lista de missões é trocada. Você pode ajustar cada missão/horário depois no Guardião.")){
       S.rotina=agendaPadraoUteis();save();try{if(cloudReady)cloudPush(true);}catch(e){}
       renderPais();renderToday();renderReminder();renderAgenda();
       toast("Agenda padrão aplicada 📅 — enviada à nuvem; ajuste quando quiser");
