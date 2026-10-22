@@ -150,6 +150,15 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .pv-cd{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .pv-cd.soon{background:rgba(232,99,43,.16);color:var(--ember)}
 .pv-cd.ok{background:var(--surface-2);color:var(--ink-2)}
+.pv-marco{display:inline-block;margin-top:3px;font-size:9.5px;font-weight:900;letter-spacing:.03em;padding:2px 7px;border-radius:999px;color:#fff}
+.pv-marco.m7{background:var(--water)}.pv-marco.m3{background:var(--thunder);color:#3a2a12}.pv-marco.m1{background:var(--ember)}.pv-marco.m0{background:#d12f2f}
+.estudo-hero{margin:-4px -2px 0;border-radius:18px;padding:18px 16px;color:#fff;
+  background:linear-gradient(135deg,#7a3cf2,#e8632b 60%,#f0b800);box-shadow:0 6px 20px rgba(122,60,242,.25)}
+.estudo-hero .eh-badge{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.06em;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:999px}
+.estudo-hero .eh-sub{font-size:12.5px;font-weight:700;opacity:.95}
+.topicos{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.topico{display:flex;align-items:flex-start;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:600;font-size:14px}
+.topico .tnum{flex:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#7a3cf2,#e8632b);color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal .ch{text-align:center;font-size:10px;font-weight:800;color:var(--ink-3);padding:2px 0}
 .cal .cd{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1579,6 +1588,67 @@ let calMes=0; // deslocamento de meses no mini-calendário do Guardião
 const MESES=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 function provasFuturas(){const tk=todayKey();return (S.provas||[]).filter(p=>p.data>=tk).sort((a,b)=>a.data.localeCompare(b.data));}
 function diasAte(ds){const t=new Date(todayKey()+"T00:00:00");const d=new Date(ds+"T00:00:00");return Math.round((d-t)/86400000);}
+/* ---- Apoio a provas: PDF, detecção de data/matéria, tópicos e marcos de estudo ---- */
+function loadPdfJs(){ return new Promise((res,rej)=>{
+  if(window.pdfjsLib){res(window.pdfjsLib);return;}
+  const s=document.createElement("script");
+  s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+  s.onload=()=>{ try{window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}catch(e){} res(window.pdfjsLib); };
+  s.onerror=()=>rej(new Error("pdfjs")); document.head.appendChild(s); });}
+async function pdfParaTexto(file){ const lib=await loadPdfJs(); const buf=await file.arrayBuffer();
+  const doc=await lib.getDocument({data:new Uint8Array(buf)}).promise; let txt="";
+  for(let i=1;i<=doc.numPages;i++){ const pg=await doc.getPage(i); const c=await pg.getTextContent();
+    txt+=c.items.map(it=>it.str).join(" ")+"\n"; }
+  return txt.replace(/[ \t]+/g," ").trim(); }
+const MES_NOME={janeiro:1,fevereiro:2,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+function detectarDataTexto(texto){
+  const t=norm(texto); const hoje=new Date(); const corte=new Date(hoje.toDateString());
+  let m=t.match(/\b(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?/);
+  if(m){ let y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):hoje.getFullYear(); let ds=new Date(y,(+m[2])-1,+m[1]);
+    if(!m[3]&&ds<corte)ds=new Date(y+1,(+m[2])-1,+m[1]); return todayKey(ds); }
+  m=t.match(/\b(\d{1,2})\s+de\s+([a-z]+)/);
+  if(m&&MES_NOME[m[2]]){ let y=hoje.getFullYear(); let ds=new Date(y,MES_NOME[m[2]]-1,+m[1]);
+    if(ds<corte)ds=new Date(y+1,MES_NOME[m[2]]-1,+m[1]); return todayKey(ds); }
+  return "";
+}
+function adivinharMateria(texto){
+  const t=norm(texto);
+  const mats=[["Matemática",/matematica|algebra|geometria|fracao|fracoe|equac|multiplicac|divisao/],
+    ["Português",/portugues|gramatica|redacao|interpretac|ortografia|substantivo|verbo/],
+    ["Ciências",/ciencias|biologia|corpo humano|celula|ecossistema|cadeia alimentar/],
+    ["História",/historia|colonia|independencia|revolucao|imperio/],
+    ["Geografia",/geografia|mapa|relevo|clima|continente|estados|regioes/],
+    ["Inglês",/ingles|english|verb to be|vocabulary/],["Artes",/artes|pintura|desenho/]];
+  for(const[nome,re] of mats){ if(re.test(t))return nome; } return "";
+}
+function provaMarco(n){ return n===0?{tag:"É HOJE! 🔥",cls:"m0"}:n===1?{tag:"É AMANHÃ! ⚔️",cls:"m1"}:n<=3?{tag:"RETA FINAL! 💪",cls:"m3"}:n<=7?{tag:"HORA DE ESTUDAR! 📚",cls:"m7"}:null; }
+function topicosDe(p){ const raw=((p&&(p.conteudo||p.nota))||"").trim(); if(!raw)return [];
+  return raw.split(/\n|;|•|•|·|–|—|\d+\s*[\).\-]\s+/).map(s=>s.replace(/^[\s\-–—•·]+/,"").trim()).filter(s=>s.length>1).slice(0,30); }
+/* Card de estudo (estilo anime) para a criança */
+function sheetEstudo(p){
+  const n=diasAte(p.data); const tops=topicosDe(p); const d=new Date(p.data+"T00:00:00");
+  const quando = n<0?"já passou":n===0?"É HOJE":n===1?"É AMANHÃ":"faltam "+n+" dias";
+  openSheet(`<div class="estudo-hero"><div class="eh-badge">⚔️ MISSÃO DE ESTUDO</div>
+      <h2 style="margin:8px 0 2px;color:#fff">${escapeHtml(p.materia)}</h2>
+      <div class="eh-sub">Prova ${pad2(d.getDate())}/${pad2(d.getMonth()+1)}${p.hora?" · "+p.hora:""} · <b>${quando}</b></div></div>
+    ${tops.length?`<div class="plan-note" style="margin-top:14px">Derrote um tópico de cada vez, treinando um pouquinho por dia! 🌟</div>
+      <div class="topicos">${tops.map((t,i)=>`<div class="topico"><span class="tnum">${i+1}</span><span>${escapeHtml(t)}</span></div>`).join("")}</div>`
+      :`<div class="empty" style="margin-top:14px">Ainda sem conteúdo. No Guardião → Provas, anexe o PDF ou escreva os tópicos da prova.</div>`}
+    <button class="btn primary" id="estOk" style="margin-top:16px">Tô pronta pra treinar! 💪</button>`);
+  $("#estOk").onclick=closeSheet;
+}
+/* Lembretes de estudo: 7, 3, 1 e 0 dias (1x por sessão/dia) */
+function checkProvaNudges(){
+  provasFuturas().forEach(p=>{ const n=diasAte(p.data); if(![0,1,3,7].includes(n))return;
+    try{const key="pvn_"+p.id+"_"+n+"_"+todayKey(); if(sessionStorage.getItem(key))return; sessionStorage.setItem(key,"1");}catch(e){}
+    const msg = n===0?`🔥 É hoje a prova de ${p.materia}! Boa sorte! 💪`
+      : n===1?`⚔️ Amanhã tem prova de ${p.materia} — hora da revisão final!`
+      : n===3?`💪 Faltam 3 dias para a prova de ${p.materia}. Bora estudar!`
+      : `📚 Faltam 7 dias para a prova de ${p.materia} — hora de começar a estudar!`;
+    toast(msg);
+    try{ if(S.config.notif && ("Notification"in window) && Notification.permission==="granted") new Notification("Kizuna · Estudo 📚",{body:msg}); }catch(e){}
+  });
+}
 /* Card no Hoje: próximas provas com contagem regressiva */
 function renderProvasHoje(){
   const slot=$("#provasSlot");if(!slot)return;slot.innerHTML="";
@@ -1590,11 +1660,17 @@ function renderProvasHoje(){
   ev.forEach(p=>{const n=diasAte(p.data);const d=new Date(p.data+"T00:00:00");
     const wd=["dom","seg","ter","qua","qui","sex","sáb"][d.getDay()];
     const cd = n===0?`Hoje!`:n===1?`Amanhã`:`faltam ${n} dias`;
-    const row=document.createElement("div");row.className="pv-row";
+    const mk=provaMarco(n);
+    const row=document.createElement("div");row.className="pv-row";row.style.cursor="pointer";
     row.innerHTML=`<div class="pv-when"><b>${pad2(d.getDate())}/${pad2(d.getMonth()+1)}</b><small>${wd}${p.hora?" · "+p.hora:""}</small></div>
-      <div style="flex:1;font-weight:700;font-size:14.5px">${escapeHtml(p.materia)}</div>
+      <div style="flex:1"><div style="font-weight:700;font-size:14.5px">${escapeHtml(p.materia)}</div>
+        ${mk?`<div class="pv-marco ${mk.cls}">${mk.tag}</div>`:""}</div>
       <span class="pv-cd ${n<=3?"soon":"ok"}">${cd}</span>`;
+    row.onclick=()=>sheetEstudo(p);
     card.appendChild(row);});
+  const dica=document.createElement("div");dica.className="muted";dica.style.cssText="font-size:11px;font-weight:600;margin-top:6px";
+  dica.textContent="Toque numa prova para ver a missão de estudo. ⚔️";
+  card.appendChild(dica);
   slot.appendChild(card);
 }
 /* Guardião: mini-calendário do mês + lista + cadastro */
@@ -1637,21 +1713,37 @@ function renderProvas(){
 function sheetProva(edit,preData){
   const novo=!edit;
   openSheet(`<h3>${novo?"Nova prova":"Editar prova"}</h3>
+    <button class="btn ghost" id="pvPdfBtn" style="margin-bottom:6px">📄 Anexar PDF da prova (preenche data e conteúdo)</button>
+    <input type="file" id="pvPdfFile" accept="application/pdf" style="display:none">
+    <div class="muted" id="pvPdfSt" style="font-size:11px;font-weight:700;margin:0 2px 4px"></div>
     <label class="fld">Matéria</label><input id="pvMat" value="${edit?escapeHtml(edit.materia):""}" placeholder="Ex.: Matemática">
     <label class="fld">Data</label><input id="pvData" type="date" value="${edit?edit.data:(preData||"")}">
     <label class="fld">Horário (opcional)</label><input id="pvHora" type="time" value="${edit&&edit.hora?edit.hora:""}">
-    <label class="fld">Conteúdo / observações (opcional)</label><input id="pvNota" value="${edit&&edit.nota?escapeHtml(edit.nota):""}" placeholder="Ex.: capítulos 3 e 4">
+    <label class="fld">Conteúdo programático (o que estudar)</label>
+    <textarea id="pvConteudo" rows="5" placeholder="Um tópico por linha. Ex.:&#10;Frações equivalentes&#10;Multiplicação por 2 e 3 algarismos&#10;Leitura de gráficos" style="width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:var(--night-2);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:12px 13px;resize:vertical">${edit?escapeHtml(edit.conteudo||edit.nota||""):""}</textarea>
+    <div class="muted" style="font-size:11px;font-weight:600;margin-top:5px">A Mafê vê isso como “Missão de Estudo” ⚔️ ao tocar na prova. O conteúdo detalhado você gera no NotebookLM e cola aqui.</div>
     <button class="btn primary" id="pvSave" style="margin-top:16px">${novo?"Adicionar prova":"Salvar"}</button>
     ${edit?`<button class="btn ghost" id="pvDel" style="margin-top:9px;color:var(--ember)">Excluir prova</button>`:""}`);
+  const pdfBtn=$("#pvPdfBtn"),pdfFile=$("#pvPdfFile"),pdfSt=$("#pvPdfSt");
+  if(pdfBtn)pdfBtn.onclick=()=>pdfFile.click();
+  if(pdfFile)pdfFile.onchange=async()=>{ const f=pdfFile.files[0]; if(!f)return;
+    pdfSt.textContent="Lendo o PDF… 📄";
+    try{ const txt=await pdfParaTexto(f);
+      if($("#pvConteudo")&&!$("#pvConteudo").value.trim())$("#pvConteudo").value=txt.slice(0,5000);
+      const dd=detectarDataTexto(txt); if(dd&&$("#pvData")&&!$("#pvData").value)$("#pvData").value=dd;
+      const mm=adivinharMateria(txt); if(mm&&$("#pvMat")&&!$("#pvMat").value)$("#pvMat").value=mm;
+      pdfSt.textContent="PDF lido ✓ — confira a data e os tópicos.";
+    }catch(e){ pdfSt.textContent="Não consegui ler esse PDF aqui. Cole o conteúdo manualmente."; }
+  };
   $("#pvSave").onclick=()=>{
     const materia=$("#pvMat").value.trim();const data=$("#pvData").value;
     if(!materia){toast("Escreva a matéria");return;} if(!data){toast("Escolha a data");return;}
-    const hora=$("#pvHora").value,nota=$("#pvNota").value.trim();
-    if(edit){edit.materia=materia;edit.data=data;edit.hora=hora;edit.nota=nota;}
-    else S.provas.push({id:Math.random().toString(36).slice(2,9),materia,data,hora,nota});
-    save();closeSheet();renderProvas();renderProvasHoje();toast(novo?"Prova adicionada 📝":"Prova atualizada");
+    const hora=$("#pvHora").value,conteudo=$("#pvConteudo").value.trim();
+    if(edit){edit.materia=materia;edit.data=data;edit.hora=hora;edit.conteudo=conteudo;delete edit.nota;}
+    else S.provas.push({id:Math.random().toString(36).slice(2,9),materia,data,hora,conteudo});
+    save();closeSheet();try{renderProvas();renderProvasHoje();}catch(e){}toast(novo?"Prova adicionada 📝":"Prova atualizada ✓");
   };
-  if(edit)$("#pvDel").onclick=()=>{S.provas=S.provas.filter(x=>x.id!==edit.id);save();closeSheet();renderProvas();renderProvasHoje();toast("Prova removida");};
+  if(edit)$("#pvDel").onclick=()=>{S.provas=S.provas.filter(x=>x.id!==edit.id);save();closeSheet();try{renderProvas();renderProvasHoje();}catch(e){}toast("Prova removida");};
 }
 
 /* ---------- Render: TESOURO ---------- */
@@ -2077,13 +2169,13 @@ function renderPais(){
   $("#addRewBtn").onclick=()=>sheetReward();
   $("#addTreinoBtn").onclick=()=>sheetTreino();
   $("#saveMetaDia").onclick=()=>{S.config.metaDia=Math.max(1,parseInt($("#cMetaDia").value)||100);
-    save();renderPaisDia();renderToday();toast("Meta do dia salva — pontos redistribuídos");};
+    save();toast("Meta do dia salva ✓ — pontos redistribuídos");try{renderPaisDia();renderToday();}catch(e){}};
   $("#addDiaBtn").onclick=()=>sheetTask(null,PDIA);
   $("#addProvaBtn").onclick=()=>sheetProva(null);
   $("#saveFis").onclick=()=>{S.fisico.metaSemanal=Math.max(1,parseInt($("#fMeta").value)||100);
-    S.fisico.mesada=Math.max(0,parseFloat($("#fMesada").value)||0);save();renderTreino();toast("Meta e mesada salvas");};
+    S.fisico.mesada=Math.max(0,parseFloat($("#fMesada").value)||0);save();toast("Meta e mesada salvas ✓");try{renderTreino();}catch(e){}};
   $("#savePoup").onclick=()=>{S.poupanca.titulo=$("#pTitle").value||"Meu tesouro";
-    S.poupanca.meta=Math.max(0,parseFloat($("#pMeta").value)||0);save();renderTesouro();toast("Poupança salva");};
+    S.poupanca.meta=Math.max(0,parseFloat($("#pMeta").value)||0);save();toast("Poupança salva ✓");try{renderTesouro();}catch(e){}};
   $("#saveCfg").onclick=()=>{S.profile.nome=$("#cName").value||"Linn";
     S.config.hidratacaoMeta=Math.max(1,Math.min(12,parseInt($("#cHydro").value)||6));
     S.config.avatarFixoTopo=$("#cFloat").checked;
@@ -2372,7 +2464,7 @@ function go(scr){
   $$(".screen").forEach(s=>s.classList.remove("active"));
   $("#scr-"+scr).classList.add("active");
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.scr===scr));
-  if(scr==="hoje"){SEL=null;WK=0;renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();}
+  if(scr==="hoje"){SEL=null;WK=0;renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();try{checkProvaNudges();}catch(e){}}
   if(scr==="treino")renderTreino();
   if(scr==="dojo")renderDojo();
   if(scr==="tesouro")renderTesouro();
@@ -2404,6 +2496,8 @@ function migrate(){
   // blindagem: garante que listas/objetos essenciais existam (evita quebra com estado incompleto)
   if(!S.profile||typeof S.profile!=="object")S.profile={nome:"Linn",xp:0,moedas:0};
   if(typeof S.profile.nome!=="string")S.profile.nome="Linn";
+  if(typeof S.profile.xp!=="number")S.profile.xp=0;
+  if(typeof S.profile.moedas!=="number")S.profile.moedas=0;
   if(!Array.isArray(S.rotina))S.rotina=[];
   if(!Array.isArray(S.recompensas))S.recompensas=[];
   if(!Array.isArray(S.medalhas))S.medalhas=[];
@@ -2723,7 +2817,22 @@ function initAssistant(){
   renderSugs();initMic();
   $("#assistFab").onclick=()=>openAssist(true);
   $("#assistClose").onclick=closeAssist;
-  const atb=$("#attachBtn");if(atb)atb.onclick=()=>addBubble("Para anexar foto, vídeo ou áudio de uma missão, toque no clipinho 📎 da tarefa na tela Hoje — aí a comprovação vai para o papai/mamãe conferir. 🍋","a");
+  const atb=$("#attachBtn");if(atb)atb.onclick=()=>{
+    const inp=document.createElement("input");inp.type="file";inp.accept="application/pdf,image/*";
+    inp.onchange=async()=>{ const f=inp.files[0]; if(!f)return;
+      if(f.type==="application/pdf"||/\.pdf$/i.test(f.name||"")){
+        addBubble("Lendo o PDF da prova… 📄","a");
+        try{ const txt=await pdfParaTexto(f); const data=detectarDataTexto(txt); const mat=adivinharMateria(txt);
+          addBubble("Peguei o conteúdo! Vou abrir o cadastro da prova"+(mat?` de ${mat}`:"")+(data?` (dia ${data.split("-").reverse().slice(0,2).join("/")})`:"")+" para você confirmar. 📝","a");
+          closeAssist(); sheetProva(null,data);
+          setTimeout(()=>{ if(mat&&$("#pvMat")&&!$("#pvMat").value)$("#pvMat").value=mat;
+            if($("#pvConteudo")&&!$("#pvConteudo").value.trim())$("#pvConteudo").value=txt.slice(0,5000);
+            const st=$("#pvPdfSt"); if(st)st.textContent="PDF lido ✓ — confira a data e os tópicos."; },200);
+        }catch(e){ addBubble("Não consegui ler esse PDF aqui. Você pode cadastrar a prova no Guardião → Provas e anexar o PDF por lá. 📝","a"); }
+      } else {
+        addBubble("Para anexar foto, vídeo ou áudio de uma missão, toque no clipinho 📎 da tarefa na tela Hoje. 🍋","a");
+      } };
+    inp.click(); };
   $("#sendBtn").onclick=()=>assistSend($("#assistInput").value);
   $("#assistInput").addEventListener("keydown",e=>{if(e.key==="Enter")assistSend($("#assistInput").value);});
   $("#assistVoz").textContent=S.config.voz?"🔊":"🔇";
@@ -2787,6 +2896,7 @@ load();migrate();
 if(!S.config.tema)S.config.tema=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
 function safe(fn){try{fn();}catch(e){console.error("Kizuna init:",e&&e.message,e);}}
 [applyTheme,drawMon,renderHero,renderHydro,renderProvasHoje,renderDaySel,renderToday,renderReminder,renderAgenda,initAssistant,initIntro,cloudInit].forEach(safe);
+setTimeout(()=>{try{checkProvaNudges();}catch(e){}},1500);
 setTimeout(()=>{try{autoLimpeza();}catch(e){}},5000); // espera a nuvem conectar p/ apagar também do Storage
 $("#linnTop").onclick=()=>{scrollTo({top:0,behavior:"smooth"});};
 window.addEventListener("scroll",checkLinnTop,{passive:true});
