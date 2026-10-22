@@ -1957,6 +1957,16 @@ function renderPais(){
      </select>
      <div class="muted" style="font-size:11px;font-weight:600;margin-top:5px">Comprovações já revisadas (aprovadas/recusadas) são apagadas do aparelho e da nuvem após esse prazo, deixando o app leve. As pendentes nunca são apagadas.</div>
      <button class="btn ghost" id="limparBtn" style="margin-top:9px">🧹 Limpar comprovações antigas agora</button>
+     <label class="fld" style="margin-top:14px">Voz do KizAI 🎤</label>
+     <select id="cVozNome" style="width:100%;padding:11px 12px;border-radius:12px;border:1.5px solid var(--line);font-size:14px;font-weight:700;background:#fff"></select>
+     <div style="display:flex;gap:12px;margin-top:8px">
+       <div style="flex:1"><label class="fld" style="margin-top:0">Tom (fofo/anime ↑)</label>
+         <input id="cVozPitch" type="range" min="0.6" max="2" step="0.05" style="width:100%"></div>
+       <div style="flex:1"><label class="fld" style="margin-top:0">Velocidade</label>
+         <input id="cVozRate" type="range" min="0.7" max="1.4" step="0.05" style="width:100%"></div>
+     </div>
+     <button class="btn ghost" id="testVozBtn" style="margin-top:9px">🔊 Testar voz do KizAI</button>
+     <div class="muted" style="font-size:11px;font-weight:600;margin-top:5px">Para uma voz mais natural no iPhone/iPad: Ajustes do iOS → Acessibilidade → Conteúdo falado → Vozes → Português → baixe uma voz “Aprimorada/Premium” (ex.: Luciana). Ela aparece na lista acima.</div>
      <button class="btn primary" id="saveCfg" style="margin-top:14px">Salvar ajustes</button>
      <div style="display:flex;gap:9px;margin-top:12px">
        <button class="btn ghost" id="expBtn" style="width:auto;flex:1">Exportar backup</button>
@@ -2081,6 +2091,22 @@ function renderPais(){
     const np=$("#cPin").value.replace(/\D/g,"");if(np.length===4)S.config.pin=np;
     save();renderHero();renderHydro();updateLinnTop(linnMood());toast("Ajustes salvos");};
   const lzSel=$("#cLimpeza");if(lzSel)lzSel.value=String(S.config.limpezaDias);
+  // voz do KizAI
+  const vsel=$("#cVozNome"), vpit=$("#cVozPitch"), vrat=$("#cVozRate");
+  function preencherVozes(){ if(!vsel)return; carregarVozes();
+    const pt=vozesPT(); const lista=pt.length?pt:_vozes;
+    vsel.innerHTML='<option value="">Automática (recomendada)</option>'+
+      lista.map(v=>`<option value="${escapeHtml(v.name)}">${escapeHtml(v.name)} (${escapeHtml(v.lang||"")})</option>`).join("");
+    vsel.value=(S.config&&S.config.vozNome)||"";
+  }
+  if(vsel){ preencherVozes(); try{speechSynthesis.onvoiceschanged=()=>{carregarVozes();preencherVozes();};}catch(e){}
+    vsel.onchange=()=>{S.config.vozNome=vsel.value;save();}; }
+  if(vpit){ vpit.value=(S.config&&typeof S.config.vozPitch==="number")?S.config.vozPitch:1.4;
+    vpit.oninput=()=>{S.config.vozPitch=parseFloat(vpit.value);save();}; }
+  if(vrat){ vrat.value=(S.config&&S.config.vozRate)||1.05;
+    vrat.oninput=()=>{S.config.vozRate=parseFloat(vrat.value);save();}; }
+  const tvb=$("#testVozBtn"); if(tvb)tvb.onclick=()=>{ const prev=S.config.voz; S.config.voz=true;
+    speak("Oi! Eu sou o KizAI, o mensageiro do pomar do Linn. Bora cumprir as missões de hoje?"); S.config.voz=prev; };
   const lb=$("#limparBtn");if(lb)lb.onclick=()=>{
     const d=parseInt(($("#cLimpeza")||{}).value)||S.config.limpezaDias||30;
     const prazo=d>0?d:30, cnt=comprovAntigas(prazo).length;
@@ -2388,6 +2414,9 @@ function migrate(){
   if(!S.agenda)S.agenda=[];
   if(!S.linn)S.linn={};
   if(typeof S.config.voz==="undefined")S.config.voz=true;
+  if(typeof S.config.vozNome!=="string")S.config.vozNome="";        // "" = automática
+  if(typeof S.config.vozPitch!=="number")S.config.vozPitch=1.4;     // perfil "anime": mais aguda/fofa
+  if(typeof S.config.vozRate!=="number")S.config.vozRate=1.05;
   if(typeof S.config.notif==="undefined")S.config.notif=false;
   if(typeof S.config.metaDia!=="number")S.config.metaDia=100;
   if(typeof S.config.avatarFixoTopo!=="boolean")S.config.avatarFixoTopo=true;
@@ -2629,9 +2658,26 @@ function dispatch(raw){
 }
 /* --- voz --- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let recog=null,listening=false;
+let _vozes=[];
+function carregarVozes(){ try{ _vozes=speechSynthesis.getVoices()||[]; }catch(e){ _vozes=[]; } }
+try{ carregarVozes(); if("speechSynthesis" in window) speechSynthesis.onvoiceschanged=carregarVozes; }catch(e){}
+function vozesPT(){ return _vozes.filter(v=>/pt(-|_)?(br)?/i.test(v.lang||"")); }
+function escolherVoz(){
+  if(!_vozes.length)carregarVozes();
+  // 1) voz escolhida pelo responsável
+  if(S.config&&S.config.vozNome){ const v=_vozes.find(x=>x.name===S.config.vozNome); if(v)return v; }
+  const pt=vozesPT();
+  // 2) preferir vozes femininas/naturais comuns em PT-BR (soam mais jovens/fofas)
+  const pref=["Luciana","Joana","Catarina","Google português do Brasil","Microsoft Maria","Microsoft Francisca","Fernanda","Helena"];
+  for(const nome of pref){ const v=pt.find(x=>(x.name||"").toLowerCase().includes(nome.toLowerCase())); if(v)return v; }
+  return pt[0]||_vozes[0]||null;
+}
 function speak(text){ if(!S.config.voz)return; try{
   const clean=text.replace(/[^\p{L}\p{N}\s.,!?:;()'"%\/R$+-]/gu,"");
-  const u=new SpeechSynthesisUtterance(clean);u.lang="pt-BR";u.rate=1.03;u.pitch=1.12;
+  const u=new SpeechSynthesisUtterance(clean);
+  const v=escolherVoz(); if(v){u.voice=v;u.lang=v.lang||"pt-BR";} else u.lang="pt-BR";
+  u.rate=(S.config&&S.config.vozRate)||1.05;
+  u.pitch=(S.config&&typeof S.config.vozPitch==="number")?S.config.vozPitch:1.4;
   speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){} }
 /* --- UI --- */
 function addBubble(text,who,undoFn){
