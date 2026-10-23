@@ -150,6 +150,12 @@ label.fld{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin
 .pv-cd{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .pv-cd.soon{background:rgba(232,99,43,.16);color:var(--ember)}
 .pv-cd.ok{background:var(--surface-2);color:var(--ink-2)}
+.alertbar{position:fixed;left:16px;right:16px;top:calc(10px + env(safe-area-inset-top,0px));z-index:90;max-width:520px;margin:0 auto;
+  background:linear-gradient(135deg,var(--ember),#ff7a4d);color:#fff;font-weight:800;font-size:14px;line-height:1.3;
+  padding:13px 16px;border-radius:14px;box-shadow:0 8px 22px rgba(232,99,43,.4);text-align:center;cursor:pointer;
+  transform:translateY(-160%);transition:transform .32s cubic-bezier(.2,.9,.3,1)}
+.alertbar.show{transform:translateY(0);animation:alertpulse 1.6s ease-in-out 1}
+@keyframes alertpulse{0%,100%{box-shadow:0 8px 22px rgba(232,99,43,.4)}50%{box-shadow:0 8px 30px rgba(232,99,43,.7)}}
 .pv-marco{display:inline-block;margin-top:3px;font-size:9.5px;font-weight:900;letter-spacing:.03em;padding:2px 7px;border-radius:999px;color:#fff}
 .pv-marco.m7{background:var(--water)}.pv-marco.m3{background:var(--thunder);color:#3a2a12}.pv-marco.m1{background:var(--ember)}.pv-marco.m0{background:#d12f2f}
 .estudo-hero{margin:-4px -2px 0;border-radius:18px;padding:18px 16px;color:#fff;
@@ -2357,14 +2363,33 @@ function askNotif(){
     .catch(()=>toast("Não consegui pedir permissão de notificação neste navegador."));
 }
 let notifDone={};
+let _alertTimer=null;
+function bannerAlerta(msg){
+  let el=$("#alertBar"); if(!el){ el=document.createElement("div"); el.id="alertBar"; el.className="alertbar"; document.body.appendChild(el); }
+  el.textContent=msg; el.classList.add("show");
+  el.onclick=()=>{ el.classList.remove("show"); try{go("hoje");}catch(e){} };
+  clearTimeout(_alertTimer); _alertTimer=setTimeout(()=>el.classList.remove("show"),9000);
+}
+function alertaAtividade(t,falta,agora){
+  const r=(RESP[t.dom]||RESP.metas);
+  bannerAlerta( agora ? `${r.icon} É agora: ${t.titulo}!` : `⏰ Em ${falta} min: ${t.titulo} · ${tStart(t)}` );
+  try{ if(S.config.notif && ("Notification"in window) && Notification.permission==="granted")
+    new Notification("Kizuna · "+r.nome,{body: agora?`${t.titulo} — está na hora!`:`${t.titulo} começa às ${tStart(t)} (em ${falta} min)`}); }catch(e){}
+}
 function checkReminders(){
-  if(!S.config.notif||!("Notification"in window)||Notification.permission!=="granted")return;
-  const now=new Date();const hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
-  const tk=todayKey();
-  S.rotina.forEach(t=>{if(t.horario===hm&&!isDone(t.id)&&notifDone[tk+t.id]!==true){
-    notifDone[tk+t.id]=true;
-    try{new Notification("Kizuna · "+(RESP[t.dom]||RESP.metas).nome,{body:t.titulo+" — está na hora!"});}catch(e){}
-  }});
+  try{
+    const now=new Date(); const nowMin=now.getHours()*60+now.getMinutes();
+    const tk=todayKey(), wd=weekdayOf(tk);
+    const avisar=(S.config&&typeof S.config.avisarMin==="number")?S.config.avisarMin:15;
+    (S.rotina||[]).forEach(t=>{
+      if(!taskOnDay(t,wd))return;
+      const s=hm2min(tStart(t)); if(s==null)return;
+      if(taskState(t.id,tk)!=="none")return;        // já feita/pendente → não avisa
+      const falta=s-nowMin;
+      if(falta>0 && falta<=avisar){ const k=tk+t.id+"_pre"; if(!notifDone[k]){notifDone[k]=true;alertaAtividade(t,falta,false);} }
+      else if(falta<=0 && falta>=-1){ const k=tk+t.id+"_now"; if(!notifDone[k]){notifDone[k]=true;alertaAtividade(t,0,true);} }
+    });
+  }catch(e){}
 }
 
 /* ---------- Emblema (mon) SVG ---------- */
@@ -2508,6 +2533,7 @@ function migrate(){
   if(!S.agenda)S.agenda=[];
   if(!S.linn)S.linn={};
   if(typeof S.config.voz==="undefined")S.config.voz=true;
+  if(typeof S.config.avisarMin!=="number")S.config.avisarMin=15;    // avisar X min antes de cada atividade
   if(typeof S.config.vozNome!=="string")S.config.vozNome="";        // "" = automática
   if(typeof S.config.vozPitch!=="number")S.config.vozPitch=1.4;     // perfil "anime": mais aguda/fofa
   if(typeof S.config.vozRate!=="number")S.config.vozRate=1.05;
@@ -2902,7 +2928,8 @@ $("#linnTop").onclick=()=>{scrollTo({top:0,behavior:"smooth"});};
 window.addEventListener("scroll",checkLinnTop,{passive:true});
 updateLinnTop(linnMood());
 setInterval(checkReminders,30000);
-window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();} });
+setTimeout(()=>{try{checkReminders();}catch(e){}},2500);   // checa logo ao abrir
+window.addEventListener("focus",()=>{ if($("#scr-hoje").classList.contains("active")){renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();} try{checkReminders();}catch(e){} });
 if(!S.config.introVista){ setTimeout(openIntro,400); }
 // KizAI abre somente ao tocar no botão 🐦‍⬛ (sem abertura automática)
 </script>
