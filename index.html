@@ -2625,8 +2625,10 @@ function cleanTitle(raw){
   s=s.replace(/\b(das|de|entre)\s+\d{1,2}([:h]\d{2})?\s*(as|ate|a|e)\s+\d{1,2}([:h]\d{2})?\b/g," "); // faixa "das 21:00 as 21:15"
   s=s.replace(/\bas\s+\d{1,2}\s*(h|horas)?\b/g," ").replace(/\b\d{1,2}[:h]\d{2}\b/g," ").replace(/\b\d{1,2}\s*h\b/g," ").replace(/\bmeio dia\b/g," ").replace(/\bmeia noite\b/g," ");
   s=s.replace(/\b\d+\s*(minutos?|min|horas?|hrs?)\b/g," ");              // durações
+  s=s.replace(/\b(durante|por|a partir das?|a partir do|a partir de|a cada|comecando as?|comeca as?)\b/g," ");
   s=s.replace(/\b(todos os dias|todo dia|diariamente|toda noite|toda manha|toda tarde)\b/g," ");
   s=s.replace(/[:]\d{2}\b/g," ");                                        // restos de horário
+  s=s.replace(/[.,;!?]+/g," ");                                          // pontuação solta
   s=s.replace(/\b(hoje|amanha|depois de amanha|dia\s+\d{1,2}|\d{1,2}\/\d{1,2}(\/\d{2,4})?|segunda|terca|quarta|quinta|sexta|sabado|domingo)(\s*-?\s*feira)?\b/g," ");
   s=s.replace(/\b(da manha|da tarde|da noite|as)\b/g," ");
   let words=s.split(/\s+/).filter(Boolean);
@@ -2669,7 +2671,7 @@ function classify(raw){
   }
   return {intent:"fallback", raw};
 }
-function refreshAll(){renderHero();renderHydro();renderProvasHoje();renderDaySel();renderToday();renderReminder();renderAgenda();renderTesouro();renderDojo();renderTreino();}
+function refreshAll(){ [renderHero,renderHydro,renderProvasHoje,renderDaySel,renderToday,renderReminder,renderAgenda,renderTesouro,renderDojo,renderTreino].forEach(fn=>{try{fn();}catch(e){console.error("refresh:",e&&e.message);}}); }
 function agTreino(c){return logTreinoByText(norm(c.raw));}
 function agComprovar(c){
   const t=norm(c.raw);const tk=todayKey();const wd=weekdayOf(tk);
